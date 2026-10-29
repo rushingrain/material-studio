@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">柔光人像示例素材</title>
+  <rect width="640" height="800" fill="#d5e0d8"/>
+  <rect x="48" y="48" width="544" height="704" rx="272" fill="#eef0df"/>
+  <circle cx="324" cy="285" r="102" fill="#d19a77"/>
+  <path d="M167 660c13-141 74-222 157-222s144 81 157 222" fill="#bd765e"/>
+  <path d="M219 267c4-94 60-145 113-145 61 0 104 55 103 145-35-26-73-40-114-38-38 2-68 19-102 38z" fill="#493e3a"/>
+  <path d="M89 548c40-46 56-100 41-153 57 22 86 68 83 137" fill="#6e8f79"/>
+</svg>

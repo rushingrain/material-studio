@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">餐桌故事模板封面</title>
+  <rect width="640" height="800" fill="#e4d6c5"/>
+  <rect x="42" y="42" width="556" height="716" rx="12" fill="#f7f1e7"/>
+  <path d="M91 190h458M91 610h458" stroke="#8d6d56" stroke-width="4"/>
+  <circle cx="320" cy="397" r="182" fill="#fffdf5"/>
+  <circle cx="320" cy="397" r="148" fill="#cad7bd"/>
+  <path d="M220 421c18-84 74-128 137-119 42 7 71 43 65 88-9 69-73 121-139 119-46-2-74-37-63-88z" fill="#cf7957"/>
+  <circle cx="271" cy="354" r="21" fill="#e4b765"/>
+  <circle cx="379" cy="466" r="24" fill="#e4b765"/>
+  <path d="M478 298v194M499 298v194M520 298v194" stroke="#92775e" stroke-width="7"/>
+  <path d="M120 310v190M144 310v190" stroke="#92775e" stroke-width="7"/>
+</svg>

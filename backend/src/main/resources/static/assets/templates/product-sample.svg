@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">产品静物示例素材</title>
+  <rect width="640" height="800" fill="#e8e4d7"/>
+  <rect x="48" y="48" width="544" height="704" rx="18" fill="#fbfaf5"/>
+  <path d="M86 582h468v110H86z" fill="#b5c2b7"/>
+  <ellipse cx="320" cy="590" rx="145" ry="28" fill="#586e63" opacity=".22"/>
+  <path d="M247 322h146l20 220H227z" fill="#647e6b"/>
+  <path d="M270 322c0-33 21-54 50-54s50 21 50 54" fill="none" stroke="#45584c" stroke-width="16"/>
+  <rect x="265" y="371" width="110" height="58" rx="5" fill="#e7d8b4"/>
+  <circle cx="485" cy="205" r="43" fill="#d98e65"/>
+  <path d="M117 631h406" stroke="#f5efe0" stroke-width="6"/>
+</svg>

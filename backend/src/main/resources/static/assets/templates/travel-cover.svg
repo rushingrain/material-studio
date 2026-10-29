@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">旅行明信片模板封面</title>
+  <rect width="640" height="800" fill="#f0dfc4"/>
+  <rect x="46" y="46" width="548" height="708" fill="#fffaf0"/>
+  <path d="M46 476 185 295l110 126 100-190 199 245v180H46z" fill="#678a86"/>
+  <path d="m46 545 162-104 114 74 111-121 161 105v157H46z" fill="#3f6968"/>
+  <path d="M46 624c107-42 177-48 267-9 76 33 168 33 281-8v182H46z" fill="#d58f65"/>
+  <circle cx="470" cy="180" r="52" fill="#e7bd69"/>
+  <path d="M92 682h231" stroke="#fff7e8" stroke-width="4"/>
+</svg>

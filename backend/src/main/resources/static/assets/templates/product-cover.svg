@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">产品静物模板封面</title>
+  <rect width="640" height="800" fill="#dce8eb"/>
+  <rect x="56" y="56" width="528" height="688" rx="18" fill="#f8f7f1"/>
+  <circle cx="490" cy="170" r="48" fill="#e0bc68"/>
+  <path d="M93 559h454v123H93z" fill="#8aa9a5"/>
+  <ellipse cx="320" cy="568" rx="137" ry="31" fill="#527577" opacity=".26"/>
+  <path d="M249 315h142l22 222H227z" fill="#c17c55"/>
+  <path d="M269 315c0-34 22-58 51-58s51 24 51 58" fill="none" stroke="#785442" stroke-width="17"/>
+  <rect x="264" y="362" width="112" height="63" rx="8" fill="#f2d99d"/>
+  <path d="M108 596h424" stroke="#f7efe0" stroke-width="7"/>
+</svg>

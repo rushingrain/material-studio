@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title">
+  <title id="title">柔光人像模板封面</title>
+  <rect width="640" height="800" fill="#e9d6c5"/>
+  <rect x="42" y="42" width="556" height="716" rx="278" fill="#f5eee5"/>
+  <circle cx="320" cy="280" r="105" fill="#b97050"/>
+  <path d="M167 650c10-138 70-214 153-214s143 76 153 214" fill="#55756c"/>
+  <path d="M220 262c12-104 190-129 206 5-34-28-67-39-110-35-32 3-62 17-96 30z" fill="#35433e"/>
+  <circle cx="475" cy="154" r="36" fill="#dfaa67"/>
+  <path d="M120 688h400" stroke="#ba967b" stroke-width="3"/>
+</svg>
