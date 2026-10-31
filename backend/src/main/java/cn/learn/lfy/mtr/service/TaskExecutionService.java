@@ -1,5 +1,6 @@
 package cn.learn.lfy.mtr.service;
 
+import cn.learn.lfy.mtr.config.SimulationConfig;
 import cn.learn.lfy.mtr.config.SimulationSettings;
 import cn.learn.lfy.mtr.domain.enums.TaskStage;
 import cn.learn.lfy.mtr.domain.model.Task;
@@ -44,19 +45,21 @@ public class TaskExecutionService {
     }
 
     public void execute(String taskId) {
+        // 一个任务使用同一份快照，运行期间调整全局模拟配置不会造成阶段参数混用。
+        SimulationConfig simulation = simulationSettings.snapshot();
         TaskStage activeStage = TaskStage.QUEUED;
         try {
             activeStage = TaskStage.ASSET_CHECK;
             runStage(taskId, activeStage, () -> {
                 checkAssets(taskId);
                 return null;
-            });
+            }, simulation);
 
             activeStage = TaskStage.SIMULATING;
-            String generatedUrl = runStage(taskId, activeStage, () -> simulateGeneration(taskId));
+            String generatedUrl = runStage(taskId, activeStage, () -> simulateGeneration(taskId), simulation);
 
             activeStage = TaskStage.RESULT_PACKAGING;
-            String resultUrl = runStage(taskId, activeStage, () -> packageResult(generatedUrl));
+            String resultUrl = runStage(taskId, activeStage, () -> packageResult(generatedUrl), simulation);
             lifecycleService.succeed(taskId, resultUrl);
         } catch (SimulatedStageFailure failure) {
             log.info("任务 {} 在阶段 {} 模拟失败", taskId, failure.stage());
@@ -75,14 +78,19 @@ public class TaskExecutionService {
         }
     }
 
-    private <T> T runStage(String taskId, TaskStage stage, Supplier<T> action) throws InterruptedException {
+    private <T> T runStage(
+            String taskId,
+            TaskStage stage,
+            Supplier<T> action,
+            SimulationConfig simulation
+    ) throws InterruptedException {
         if (!lifecycleService.enterStage(taskId, stage)) {
             throw new TaskStoppedException();
         }
 
-        pauseForStep();
-        if (simulationSettings.failStage() == stage) {
-            throw new SimulatedStageFailure(stage, "模拟失败：" + stageLabel(stage));
+        pauseForStep(simulation.delayFor(stage));
+        if (simulation.failStage() == stage) {
+            throw new SimulatedStageFailure(stage, "模拟失败：" + stageLabel(stage) + "阶段");
         }
 
         T result = action.get();
@@ -139,9 +147,9 @@ public class TaskExecutionService {
                 .orElseThrow(() -> new TaskExecutionException("模板不存在"));
     }
 
-    private void pauseForStep() throws InterruptedException {
-        if (simulationSettings.stepDelayMs() > 0) {
-            Thread.sleep(simulationSettings.stepDelayMs());
+    private void pauseForStep(long delayMs) throws InterruptedException {
+        if (delayMs > 0) {
+            Thread.sleep(delayMs);
         }
     }
 

@@ -64,15 +64,65 @@ GET /tasks
 
 ## 演示异步处理
 
-模拟参数只从后端配置读取。可通过环境变量调整耗时或指定失败阶段：
+模拟参数只由后端控制，不会出现在前端或模板字段中。默认值来自 `application.yml`：
+
+| 配置项 | 环境变量 | 默认行为 |
+|---|---|---|
+| `app.simulation.step-delay-ms` | `APP_STEP_DELAY_MS` | 三个阶段共用的兜底耗时，默认 1000ms |
+| `app.simulation.asset-check-delay-ms` | `APP_ASSET_CHECK_DELAY_MS` | 素材检查耗时，未设置时使用兜底耗时 |
+| `app.simulation.simulating-delay-ms` | `APP_SIMULATING_DELAY_MS` | 模拟生成耗时，未设置时使用兜底耗时 |
+| `app.simulation.result-packaging-delay-ms` | `APP_RESULT_PACKAGING_DELAY_MS` | 结果整理耗时，未设置时使用兜底耗时 |
+| `app.simulation.fail-stage` | `APP_FAIL_STAGE` | 指定失败阶段，留空表示不模拟失败 |
+
+可直接通过环境变量启动：
 
 ```bash
-APP_STEP_DELAY_MS=3000 \
+APP_ASSET_CHECK_DELAY_MS=500 \
+APP_SIMULATING_DELAY_MS=3000 \
+APP_RESULT_PACKAGING_DELAY_MS=800 \
 APP_FAIL_STAGE=SIMULATING \
 mvn spring-boot:run
 ```
 
-`APP_FAIL_STAGE` 可设为 `ASSET_CHECK`、`SIMULATING` 或 `RESULT_PACKAGING`；留空表示成功。建议设置较长的 `APP_STEP_DELAY_MS`，提交后立即进入“我的任务”并刷新页面，观察未完成任务恢复和继续更新。
+### 开发接口调整
+
+`dev` profile 下提供运行时配置接口，修改后无需重启，可反复触发不同场景。该接口不会在 `prod` profile 下注册。
+
+查看当前配置：
+
+```bash
+curl -sS http://localhost:8080/dev/simulation
+```
+
+设置模拟生成阶段 3 秒后失败：
+
+```bash
+curl -sS -X PUT http://localhost:8080/dev/simulation \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "failStage": "SIMULATING",
+    "assetCheckDelayMs": 500,
+    "simulatingDelayMs": 3000,
+    "resultPackagingDelayMs": 800
+  }'
+```
+
+`failStage` 可取 `ASSET_CHECK`、`SIMULATING`、`RESULT_PACKAGING`，设为 `null` 表示不模拟失败。三个耗时字段必填且不能小于 0。
+
+每次更新后提交新任务即可重复验证。每个任务在执行开始时固定一份配置快照，因此修改配置不会影响已经开始的任务；正在排队的任务会在真正开始执行时读取最新配置。
+
+某阶段模拟失败后，后端不会执行后续阶段，并保存 `FAILED` 状态、失败阶段和类似“模拟失败：模拟生成阶段”的原因。前端任务面板和历史页会展示该阶段与原因。
+
+### 手动验证 case
+
+1. 将 `failStage` 设为 `null`，三个阶段设为不同耗时，提交任务；状态应按“素材检查 → 模拟生成 → 结果整理 → 制作完成”推进。
+2. 将 `failStage` 设为 `ASSET_CHECK` 后提交；任务应在第一阶段变为失败，后两个阶段保持未执行，且结果地址为空。
+3. 将 `failStage` 改为 `SIMULATING` 后再次提交；应保存 `failureStage: "SIMULATING"` 和可读失败原因，证明配置可重复触发。
+4. 设置较长耗时后提交一个任务，在该任务开始后修改 `failStage`，再提交第二个任务；第一个任务应继续使用启动时配置，第二个任务使用新配置。
+5. 传入不支持的阶段或负耗时应返回 400；将 `failStage` 清空后提交新任务应恢复成功流程。
+6. 使用 `SPRING_PROFILES_ACTIVE=prod` 启动时，`/dev/simulation` 不应注册。
+
+开发接口不应暴露在公网环境。
 
 ## 验证
 

@@ -12,6 +12,9 @@ app:
     queue-capacity: ${APP_TASK_QUEUE_CAPACITY:100}
   simulation:
     step-delay-ms: ${APP_STEP_DELAY_MS:1000}
+    asset-check-delay-ms: ${APP_ASSET_CHECK_DELAY_MS:}
+    simulating-delay-ms: ${APP_SIMULATING_DELAY_MS:}
+    result-packaging-delay-ms: ${APP_RESULT_PACKAGING_DELAY_MS:}
     fail-stage: ${APP_FAIL_STAGE:}
 
 spring:
