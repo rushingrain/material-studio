@@ -1,4 +1,4 @@
-import type { ApiResponse, CreatedTask, Task, UploadedAsset } from "./types";
+import type { ApiResponse, AppUser, CreatedTask, LoginCredentials, Task, UploadedAsset } from "./types";
 
 export class ApiError extends Error {
   readonly code: number;
@@ -30,6 +30,22 @@ export async function deleteUploadedAsset(id: string): Promise<void> {
   await apiRequest<void>(`/uploads/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
+export async function login(credentials: LoginCredentials): Promise<AppUser> {
+  return apiRequest<AppUser>("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+}
+
+export async function logout(): Promise<void> {
+  await apiRequest<void>("/auth/logout", { method: "POST" });
+}
+
+export async function getCurrentUser(signal?: AbortSignal): Promise<AppUser> {
+  return apiRequest<AppUser>("/auth/me", { signal });
+}
+
 export async function createTask(
   templateId: number,
   assetIds: string[],
@@ -59,6 +75,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
+      credentials: "include",
       headers,
     });
   } catch {
@@ -67,6 +84,13 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok) {
+    if (
+      response.status === 401
+      && path !== "/auth/login"
+      && typeof window !== "undefined"
+    ) {
+      window.dispatchEvent(new Event("material-studio:auth-expired"));
+    }
     throw new ApiError(
       payload?.msg ?? `请求失败（HTTP ${response.status}）`,
       payload?.code ?? -1,

@@ -4,6 +4,8 @@ public enum ApiErrorCode {
     SUCCESS(0, "成功"),
     INVALID_REQUEST(10001, "请求参数无效"),
     VALIDATION_FAILED(10002, "参数校验失败"),
+    AUTH_REQUIRED(11001, "请先登录"),
+    INVALID_CREDENTIALS(11002, "用户名或密码不正确"),
     TEMPLATE_NOT_FOUND(20001, "模板不存在"),
     TASK_NOT_FOUND(20002, "任务不存在"),
     USER_NOT_FOUND(20003, "用户不存在"),

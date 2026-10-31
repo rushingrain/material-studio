@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "@/components/auth-provider";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -11,9 +12,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <a className="skip-link" href="#main-content">跳到主要内容</a>
-        <SiteHeader />
-        {children}
+        <AuthProvider>
+          <a className="skip-link" href="#main-content">跳到主要内容</a>
+          <SiteHeader />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

@@ -34,6 +34,14 @@
         LIMIT 1
     </select>
 
+    <select id="findByIdAndUserId" resultMap="taskResultMap">
+        SELECT <include refid="taskColumns"/>
+        FROM task
+        WHERE id = #{taskId}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
     <select id="findByUserId" resultMap="taskResultMap">
         SELECT <include refid="taskColumns"/>
         FROM task

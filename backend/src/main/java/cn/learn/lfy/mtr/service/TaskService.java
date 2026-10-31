@@ -15,7 +15,6 @@ import cn.learn.lfy.mtr.mapper.TaskAssetMapper;
 import cn.learn.lfy.mtr.mapper.TaskMapper;
 import cn.learn.lfy.mtr.mapper.TemplateMapper;
 import cn.learn.lfy.mtr.mapper.UploadAssetMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +33,6 @@ public class TaskService {
     private final UploadAssetMapper uploadAssetMapper;
     private final UploadStorage uploadStorage;
     private final ApplicationEventPublisher eventPublisher;
-    private final long demoUserId;
 
     public TaskService(
             TaskMapper taskMapper,
@@ -42,8 +40,7 @@ public class TaskService {
             TemplateMapper templateMapper,
             UploadAssetMapper uploadAssetMapper,
             UploadStorage uploadStorage,
-            ApplicationEventPublisher eventPublisher,
-            @Value("${app.demo-user-id}") long demoUserId
+            ApplicationEventPublisher eventPublisher
     ) {
         this.taskMapper = taskMapper;
         this.taskAssetMapper = taskAssetMapper;
@@ -51,11 +48,10 @@ public class TaskService {
         this.uploadAssetMapper = uploadAssetMapper;
         this.uploadStorage = uploadStorage;
         this.eventPublisher = eventPublisher;
-        this.demoUserId = demoUserId;
     }
 
     @Transactional
-    public TaskCreatedResponse submit(CreateTaskRequest request) {
+    public TaskCreatedResponse submit(CreateTaskRequest request, long userId) {
         if (request == null || request.templateId() == null) {
             throw new BusinessException(ApiErrorCode.INVALID_REQUEST, "请选择模板");
         }
@@ -74,14 +70,14 @@ public class TaskService {
         for (String assetId : assetIds) {
             UploadAsset asset = uploadAssetMapper.findById(assetId)
                     .orElseThrow(() -> new BusinessException(ApiErrorCode.ASSET_NOT_FOUND));
-            validateAsset(asset, template);
+            validateAsset(asset, template, userId);
             assets.add(asset);
         }
 
         String taskId = UUID.randomUUID().toString();
         Task task = new Task(
                 taskId,
-                demoUserId,
+                userId,
                 template.id(),
                 TaskStatus.PENDING,
                 TaskStage.QUEUED,
@@ -113,17 +109,17 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public Task findById(String taskId) {
+    public Task findById(String taskId, long userId) {
         if (taskId == null || taskId.isBlank()) {
             throw new BusinessException(ApiErrorCode.TASK_NOT_FOUND);
         }
-        return taskMapper.findById(taskId.trim())
+        return taskMapper.findByIdAndUserId(taskId.trim(), userId)
                 .orElseThrow(() -> new BusinessException(ApiErrorCode.TASK_NOT_FOUND));
     }
 
     @Transactional(readOnly = true)
-    public List<Task> findForCurrentUser() {
-        return taskMapper.findByUserId(demoUserId);
+    public List<Task> findForUser(long userId) {
+        return taskMapper.findByUserId(userId);
     }
 
     private static List<String> normalizeAssetIds(List<String> assetIds) {
@@ -144,7 +140,10 @@ public class TaskService {
         return normalized;
     }
 
-    private void validateAsset(UploadAsset asset, Template template) {
+    private void validateAsset(UploadAsset asset, Template template, long userId) {
+        if (!Long.valueOf(userId).equals(asset.userId())) {
+            throw new BusinessException(ApiErrorCode.ASSET_NOT_FOUND);
+        }
         if (!asset.templateId().equals(template.id())) {
             throw new BusinessException(ApiErrorCode.INVALID_REQUEST, "素材与所选模板不匹配");
         }

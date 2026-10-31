@@ -1,25 +1,23 @@
 package cn.learn.lfy.mtr.config;
 
+import cn.learn.lfy.mtr.auth.AuthInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.nio.file.Path;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
     private final String allowedOrigin;
-    private final String uploadLocation;
+    private final AuthInterceptor authInterceptor;
 
     public WebConfig(
             @Value("${app.cors.allowed-origin}") String allowedOrigin,
-            @Value("${app.upload-dir}") String uploadDir
+            AuthInterceptor authInterceptor
     ) {
         this.allowedOrigin = allowedOrigin;
-        String location = Path.of(uploadDir).toAbsolutePath().normalize().toUri().toString();
-        this.uploadLocation = location.endsWith("/") ? location : location + "/";
+        this.authInterceptor = authInterceptor;
     }
 
     @Override
@@ -27,13 +25,13 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(allowedOrigin)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*");
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadLocation)
-                .setCachePeriod(3600);
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/tasks/**", "/uploads/**", "/auth/me");
     }
 }

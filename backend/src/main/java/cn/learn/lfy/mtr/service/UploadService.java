@@ -49,7 +49,7 @@ public class UploadService {
         this.uploadStorage = uploadStorage;
     }
 
-    public UploadAssetResponse upload(long templateId, MultipartFile file) {
+    public UploadAssetResponse upload(long templateId, long userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ApiErrorCode.INVALID_REQUEST, "请选择要上传的图片");
         }
@@ -90,7 +90,15 @@ public class UploadService {
 
         String originalFilename = sanitizeFilename(file.getOriginalFilename(), MIME_EXTENSIONS.get(mimeType));
         try {
-            uploadAssetMapper.insert(id, templateId, originalFilename, storageKey, mimeType, file.getSize());
+            uploadAssetMapper.insert(
+                    id,
+                    userId,
+                    templateId,
+                    originalFilename,
+                    storageKey,
+                    mimeType,
+                    file.getSize()
+            );
         } catch (RuntimeException exception) {
             deleteQuietly(target);
             throw exception;
@@ -98,22 +106,31 @@ public class UploadService {
 
         return new UploadAssetResponse(
                 id,
-                "/uploads/" + storageKey,
+                "/uploads/" + id + "/content",
                 originalFilename,
                 mimeType,
                 file.getSize()
         );
     }
 
-    public void delete(String id) {
-        UploadAsset asset = uploadAssetMapper.findById(id)
+    public void delete(String id, long userId) {
+        UploadAsset asset = uploadAssetMapper.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(ApiErrorCode.ASSET_NOT_FOUND));
-        uploadAssetMapper.deleteById(id);
+        uploadAssetMapper.deleteByIdAndUserId(id, userId);
         try {
             Files.deleteIfExists(uploadStorage.resolve(asset.storageKey()));
         } catch (IOException exception) {
             log.warn("删除上传文件失败：{}", asset.storageKey(), exception);
         }
+    }
+
+    public UploadContent content(String id, long userId) {
+        UploadAsset asset = uploadAssetMapper.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new BusinessException(ApiErrorCode.ASSET_NOT_FOUND));
+        if (!uploadStorage.containsFile(asset.storageKey(), asset.sizeBytes())) {
+            throw new BusinessException(ApiErrorCode.ASSET_NOT_FOUND);
+        }
+        return new UploadContent(asset, uploadStorage.resolve(asset.storageKey()));
     }
 
     private String detectMimeType(MultipartFile file) {
@@ -202,5 +219,8 @@ public class UploadService {
         } catch (IOException exception) {
             log.warn("清理未完成的上传文件失败：{}", target, exception);
         }
+    }
+
+    public record UploadContent(UploadAsset asset, Path path) {
     }
 }

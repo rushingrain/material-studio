@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { ApiError, assetUrl } from "@/lib/api";
 import { formatAllowedTypes, formatFileSize, useMaterialUploads } from "@/hooks/useMaterialUploads";
-import type { TaskStatus, Template } from "@/lib/types";
+import type { AuthStatus, TaskStatus, Template } from "@/lib/types";
 
 type SubmitMessage = {
   tone: "error" | "info";
@@ -14,6 +15,9 @@ type SubmitMessage = {
 type MaterialUploaderProps = {
   template: Template;
   onSubmit?: (assetIds: string[]) => Promise<void>;
+  authStatus: AuthStatus;
+  loginHref: string;
+  onRetryAuth: () => void;
   latestTaskStatus: TaskStatus | null;
   latestTaskActive: boolean;
   latestTaskQueryError: boolean;
@@ -29,6 +33,9 @@ function taskStatusLabel(status: TaskStatus | null, hasQueryError: boolean): str
 export function MaterialUploader({
   template,
   onSubmit,
+  authStatus,
+  loginHref,
+  onRetryAuth,
   latestTaskStatus,
   latestTaskActive,
   latestTaskQueryError,
@@ -37,7 +44,8 @@ export function MaterialUploader({
     useMaterialUploads(template);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<SubmitMessage | null>(null);
-  const submitDisabled = !allReady || isSubmitting || latestTaskActive;
+  const authenticated = authStatus === "authenticated";
+  const submitDisabled = !authenticated || !allReady || isSubmitting || latestTaskActive;
   const summaryId = `material-upload-summary-${template.id}`;
   const submitMessageId = `material-upload-message-${template.id}`;
 
@@ -82,6 +90,26 @@ export function MaterialUploader({
         <span className="image-count">{template.requiredImageCount}<small> 张</small></span>
       </div>
 
+      {authStatus !== "authenticated" && (
+        <div className={`upload-auth-notice is-${authStatus}`} role="status">
+          {authStatus === "loading" && <p>正在确认登录状态…</p>}
+          {authStatus === "anonymous" && (
+            <>
+              <p>登录后才能上传素材并提交制作任务。</p>
+              <Link className="button button-dark" href={loginHref}>登录后开始</Link>
+            </>
+          )}
+          {authStatus === "error" && (
+            <>
+              <p>暂时无法确认登录状态，请稍后重试。</p>
+              <button className="button button-light" onClick={onRetryAuth} type="button">
+                重新检查
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="upload-slots" aria-label={`需要上传 ${template.requiredImageCount} 张图片`}>
         {slots.map((slot, index) => {
           const inputId = `material-upload-${template.id}-${index}`;
@@ -101,7 +129,7 @@ export function MaterialUploader({
                 aria-invalid={slot.error ? true : undefined}
                 aria-label={`选择第 ${index + 1} 张图片`}
                 className="upload-slot-input"
-                disabled={latestTaskActive || isSubmitting}
+                disabled={!authenticated || latestTaskActive || isSubmitting}
                 id={inputId}
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
@@ -137,7 +165,7 @@ export function MaterialUploader({
                 </div>
               )}
 
-              {previewUrl && !slot.uploading && !latestTaskActive && !isSubmitting && (
+              {previewUrl && authenticated && !slot.uploading && !latestTaskActive && !isSubmitting && (
                 <div className="upload-slot-actions">
                   <label
                     className="upload-slot-action"
@@ -220,6 +248,12 @@ export function MaterialUploader({
               ? "正在提交…"
               : latestTaskActive
                 ? taskStatusLabel(latestTaskStatus, latestTaskQueryError)
+                : authStatus === "loading"
+                  ? "正在确认登录状态…"
+                  : authStatus === "anonymous"
+                    ? "登录后开始创作"
+                    : authStatus === "error"
+                      ? "身份服务暂不可用"
                 : allReady
                   ? "素材已就绪，开始创作"
                   : "上传素材，开始创作"}

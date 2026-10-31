@@ -11,6 +11,7 @@ public interface UploadAssetMapper {
 
     int insert(
             @Param("id") String id,
+            @Param("userId") long userId,
             @Param("templateId") long templateId,
             @Param("originalFilename") String originalFilename,
             @Param("storageKey") String storageKey,
@@ -20,5 +21,13 @@ public interface UploadAssetMapper {
 
     Optional<UploadAsset> findById(@Param("id") String id);
 
-    int deleteById(@Param("id") String id);
+    Optional<UploadAsset> findByIdAndUserId(
+            @Param("id") String id,
+            @Param("userId") long userId
+    );
+
+    int deleteByIdAndUserId(
+            @Param("id") String id,
+            @Param("userId") long userId
+    );
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.learn.lfy.mtr.mapper.AuthMapper">
+    <resultMap id="userCredentialResultMap" type="cn.learn.lfy.mtr.domain.model.UserCredential">
+        <constructor>
+            <idArg column="user_id" javaType="java.lang.Long"/>
+            <arg column="username" javaType="java.lang.String"/>
+            <arg column="password_hash" javaType="java.lang.String"/>
+            <arg column="password_salt" javaType="java.lang.String"/>
+            <arg column="password_iterations" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="appUserResultMap" type="cn.learn.lfy.mtr.domain.model.AppUser">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="nickname" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCredentialByUsername" resultMap="userCredentialResultMap">
+        SELECT user_id, username, password_hash, password_salt, password_iterations, created_at, updated_at
+        FROM user_credential
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <select id="findUserById" resultMap="appUserResultMap">
+        SELECT id, nickname, created_at
+        FROM app_user
+        WHERE id = #{userId}
+        LIMIT 1
+    </select>
+
+    <select id="findUserBySessionTokenHash" resultMap="appUserResultMap">
+        SELECT u.id, u.nickname, u.created_at
+        FROM user_session s
+        JOIN app_user u ON u.id = s.user_id
+        WHERE s.token_hash = #{tokenHash}
+          AND s.expires_at &gt; #{now}
+        LIMIT 1
+    </select>
+
+    <insert id="insertSession">
+        INSERT INTO user_session (token_hash, user_id, expires_at)
+        VALUES (#{tokenHash}, #{userId}, #{expiresAt})
+    </insert>
+
+    <delete id="deleteSession">
+        DELETE FROM user_session
+        WHERE token_hash = #{tokenHash}
+    </delete>
+
+    <delete id="deleteExpiredSessions">
+        DELETE FROM user_session
+        WHERE user_id = #{userId}
+          AND expires_at &lt;= #{now}
+    </delete>
+</mapper>

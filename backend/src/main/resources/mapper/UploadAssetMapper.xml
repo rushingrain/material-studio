@@ -4,6 +4,7 @@
     <resultMap id="uploadAssetResultMap" type="cn.learn.lfy.mtr.domain.model.UploadAsset">
         <constructor>
             <idArg column="id" javaType="java.lang.String"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
             <arg column="template_id" javaType="java.lang.Long"/>
             <arg column="original_filename" javaType="java.lang.String"/>
             <arg column="storage_key" javaType="java.lang.String"/>
@@ -15,19 +16,29 @@
 
     <insert id="insert">
         INSERT INTO upload_asset
-            (id, template_id, original_filename, storage_key, mime_type, size_bytes)
+            (id, user_id, template_id, original_filename, storage_key, mime_type, size_bytes)
         VALUES
-            (#{id}, #{templateId}, #{originalFilename}, #{storageKey}, #{mimeType}, #{sizeBytes})
+            (#{id}, #{userId}, #{templateId}, #{originalFilename}, #{storageKey}, #{mimeType}, #{sizeBytes})
     </insert>
 
     <select id="findById" resultMap="uploadAssetResultMap">
-        SELECT id, template_id, original_filename, storage_key, mime_type, size_bytes, created_at
+        SELECT id, user_id, template_id, original_filename, storage_key, mime_type, size_bytes, created_at
         FROM upload_asset
         WHERE id = #{id}
         LIMIT 1
     </select>
 
-    <delete id="deleteById">
-        DELETE FROM upload_asset WHERE id = #{id}
+    <select id="findByIdAndUserId" resultMap="uploadAssetResultMap">
+        SELECT id, user_id, template_id, original_filename, storage_key, mime_type, size_bytes, created_at
+        FROM upload_asset
+        WHERE id = #{id}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <delete id="deleteByIdAndUserId">
+        DELETE FROM upload_asset
+        WHERE id = #{id}
+          AND user_id = #{userId}
     </delete>
 </mapper>

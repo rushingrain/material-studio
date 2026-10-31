@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record UploadAsset(
         String id,
+        Long userId,
         Long templateId,
         String originalFilename,
         String storageKey,

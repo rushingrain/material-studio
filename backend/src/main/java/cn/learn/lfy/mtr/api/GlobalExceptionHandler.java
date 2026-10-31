@@ -23,6 +23,7 @@ public class GlobalExceptionHandler {
         ApiErrorCode code = exception.getErrorCode();
         HttpStatus status = switch (code) {
             case TEMPLATE_NOT_FOUND, TASK_NOT_FOUND, USER_NOT_FOUND, ASSET_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case AUTH_REQUIRED, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
             case FILE_TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE;
             case FILE_TYPE_NOT_ALLOWED -> HttpStatus.UNSUPPORTED_MEDIA_TYPE;
             case BUSINESS_CONFLICT -> HttpStatus.CONFLICT;

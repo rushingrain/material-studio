@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AuthRequired } from "@/components/auth-required";
+import { useAuth } from "@/components/auth-provider";
 import { TaskStatusPanel } from "@/components/task-status-panel";
 import { useTaskPolling } from "@/hooks/useTaskPolling";
 import { ApiError, getTasks } from "@/lib/api";
-import { DEMO_USER_SCOPE_KEY } from "@/lib/identity";
+import { taskScopeKey } from "@/lib/identity";
 import type { ApiState, Task } from "@/lib/types";
 
 function isActiveTask(task: Task | undefined): boolean {
@@ -40,16 +42,20 @@ function HistoryError({ error, onRetry }: { error: Error; onRetry: () => void })
 }
 
 export function TaskHistory() {
-  const [result, setResult] = useState<{ key: number; state: ApiState<Task[]> }>({
-    key: 0,
+  const { status: authStatus, user, error: authError, refresh: refreshAuth } = useAuth();
+  const [result, setResult] = useState<{ key: string; state: ApiState<Task[]> }>({
+    key: "",
     state: { status: "loading" },
   });
   const [reloadKey, setReloadKey] = useState(0);
   const { tasks, queryErrors, trackedTaskIds, hydrateTasks, retryTask } = useTaskPolling({
-    scopeKey: DEMO_USER_SCOPE_KEY,
+    scopeKey: taskScopeKey(user?.id),
   });
+  const requestKey = `${user?.id ?? "anonymous"}:${reloadKey}`;
 
   useEffect(() => {
+    if (authStatus !== "authenticated" || !user) return;
+
     const controller = new AbortController();
     let current = true;
 
@@ -57,12 +63,12 @@ export function TaskHistory() {
       .then((records) => {
         if (!current) return;
         hydrateTasks(records);
-        setResult({ key: reloadKey, state: { status: "success", data: records } });
+        setResult({ key: requestKey, state: { status: "success", data: records } });
       })
       .catch((error: unknown) => {
         if (!current) return;
         setResult({
-          key: reloadKey,
+          key: requestKey,
           state: {
             status: "error",
             error: error instanceof Error ? error : new Error("请求失败"),
@@ -74,9 +80,60 @@ export function TaskHistory() {
       current = false;
       controller.abort();
     };
-  }, [hydrateTasks, reloadKey]);
+  }, [authStatus, hydrateTasks, requestKey, user]);
 
-  const state = result.key === reloadKey ? result.state : { status: "loading" as const };
+  const state = result.key === requestKey ? result.state : { status: "loading" as const };
+
+  if (authStatus === "loading") {
+    return (
+      <section className="history-page" aria-labelledby="history-title">
+        <header className="history-heading">
+          <div>
+            <p className="eyebrow">你的创作档案</p>
+            <h1 id="history-title">我的任务</h1>
+            <p>正在确认登录状态，请稍候。</p>
+          </div>
+        </header>
+        <HistorySkeleton />
+      </section>
+    );
+  }
+
+  if (authStatus === "error") {
+    return (
+      <section className="history-page" aria-labelledby="history-title">
+        <header className="history-heading">
+          <div>
+            <p className="eyebrow">你的创作档案</p>
+            <h1 id="history-title">我的任务</h1>
+          </div>
+        </header>
+        <section className="feedback-card history-feedback" role="alert">
+          <span className="feedback-icon feedback-icon-error" aria-hidden="true">!</span>
+          <h2>暂时无法确认登录状态</h2>
+          <p>{authError ?? "请稍后重新尝试。"}</p>
+          <button className="button button-dark" onClick={refreshAuth} type="button">
+            重新检查
+          </button>
+        </section>
+      </section>
+    );
+  }
+
+  if (authStatus === "anonymous") {
+    return (
+      <section className="history-page" aria-labelledby="history-title">
+        <header className="history-heading">
+          <div>
+            <p className="eyebrow">你的创作档案</p>
+            <h1 id="history-title">我的任务</h1>
+            <p>登录后查看每一份创作记录和处理进度。</p>
+          </div>
+        </header>
+        <AuthRequired nextPath="/tasks" description="登录后可查看和继续跟踪你的个人制作任务。" />
+      </section>
+    );
+  }
 
   return (
     <section className="history-page" aria-labelledby="history-title">

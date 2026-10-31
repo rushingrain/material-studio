@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useAuth } from "@/components/auth-provider";
 import { MaterialUploader } from "@/components/material-uploader";
 import { TaskStatusPanel } from "@/components/task-status-panel";
 import { useTaskPolling } from "@/hooks/useTaskPolling";
 import { createTask } from "@/lib/api";
-import { DEMO_USER_SCOPE_KEY } from "@/lib/identity";
+import { taskScopeKey } from "@/lib/identity";
 import type { Template } from "@/lib/types";
 
 export function TemplateWorkflow({ template }: { template: Template }) {
+  const { status: authStatus, user, refresh: refreshAuth } = useAuth();
   const { tasks, queryErrors, trackedTaskIds, trackTask, retryTask } = useTaskPolling({
-    scopeKey: DEMO_USER_SCOPE_KEY,
+    scopeKey: taskScopeKey(user?.id),
   });
   const submitController = useRef<AbortController | null>(null);
   const latestTaskId = trackedTaskIds.at(-1) ?? null;
@@ -42,10 +44,14 @@ export function TemplateWorkflow({ template }: { template: Template }) {
   return (
     <>
       <MaterialUploader
+        authStatus={authStatus}
+        key={`${template.id}:${user?.id ?? "anonymous"}`}
         latestTaskActive={latestTaskIsActive}
         latestTaskQueryError={latestTaskQueryError !== null}
         latestTaskStatus={latestTask?.status ?? null}
+        loginHref={`/login?next=${encodeURIComponent(`/templates/${template.id}`)}`}
         onSubmit={handleSubmit}
+        onRetryAuth={refreshAuth}
         template={template}
       />
       {trackedTaskIds.length > 0 && (

@@ -3,7 +3,11 @@ server:
 
 app:
   upload-dir: ${APP_UPLOAD_DIR:./uploads}
-  demo-user-id: ${APP_DEMO_USER_ID:1}
+  auth:
+    cookie-name: ${APP_AUTH_COOKIE_NAME:material_studio_session}
+    cookie-secure: ${APP_AUTH_COOKIE_SECURE:false}
+    session-ttl-seconds: ${APP_AUTH_SESSION_TTL_SECONDS:604800}
+    password-iterations: ${APP_AUTH_PASSWORD_ITERATIONS:210000}
   cors:
     allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:3000}
   execution:

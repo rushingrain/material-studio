@@ -15,6 +15,11 @@ public interface TaskMapper {
 
     Optional<Task> findById(@Param("taskId") String taskId);
 
+    Optional<Task> findByIdAndUserId(
+            @Param("taskId") String taskId,
+            @Param("userId") long userId
+    );
+
     List<Task> findByUserId(@Param("userId") long userId);
 
     int enterStage(@Param("taskId") String taskId, @Param("stage") TaskStage stage);

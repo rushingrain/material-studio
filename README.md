@@ -12,7 +12,10 @@
 mysql -u <user> -p < mysql/init/001_schema.sql
 mysql -u <user> -p < mysql/init/002_seed.sql
 mysql -u <user> -p < mysql/init/003_upload_asset.sql
+mysql -u <user> -p < mysql/init/004_auth.sql
 ```
+
+已有数据库从固定演示用户版本升级时，只需执行一次 `004_auth.sql`。该脚本会创建登录会话表、演示账号，并把现有上传素材归属到用户 `1`。
 
 启动后端：
 
@@ -21,7 +24,6 @@ cd backend
 DB_URL='jdbc:mysql://127.0.0.1:3306/material_studio?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true' \
 DB_USERNAME='<user>' \
 DB_PASSWORD='<password>' \
-APP_DEMO_USER_ID=1 \
 mvn spring-boot:run
 ```
 
@@ -33,18 +35,70 @@ npm install
 npm run dev
 ```
 
-默认地址为 `http://localhost:3000`，后端为 `http://localhost:8080`。如后端地址不同，启动前端时设置 `NEXT_PUBLIC_API_BASE_URL`。
+默认地址为 `http://localhost:3000`，后端为 `http://localhost:8080`。如后端地址不同，启动前端时设置 `NEXT_PUBLIC_API_BASE_URL`。本地登录 Cookie 依赖前后端使用同一主机名，请统一使用 `localhost` 或统一域名。
 
 ## 用户身份方案
 
-当前版本采用轻量固定演示用户，不实现登录、账号切换或真实鉴权。
+当前版本采用账号密码登录和数据库会话，不依赖 Spring Security 或 JWT。
 
-- 后端通过 `app.demo-user-id`（环境变量 `APP_DEMO_USER_ID`）确定当前用户，默认值为 `1`。
-- 提交任务时，新任务固定写入该用户；`GET /tasks` 也只返回该用户的任务。
-- 前端不提交或选择用户 ID，避免客户端任意指定查询用户。
-- 初始化 SQL 已创建 ID 为 `1` 的“演示用户”。如需使用其他用户，需要先在 `app_user` 表创建对应 ID，再修改 `APP_DEMO_USER_ID` 并重启后端。
+### 演示账号
 
-该方案适合本地演示和单实例作品展示，不应直接用于需要真实隔离的多用户生产环境。
+| 用户名 | 密码 | 昵称 |
+|---|---|---|
+| `demo` | `demo1234` | 演示用户 |
+| `alice` | `alice1234` | 光影访客 |
+
+访问 `/login` 登录。登录成功后，顶部导航显示用户昵称和“退出”按钮。
+
+也可以使用 Cookie 文件验证接口：
+
+```bash
+curl -sS -c /tmp/material-studio-cookie \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo","password":"demo1234"}' \
+  http://localhost:8080/auth/login
+
+curl -sS -b /tmp/material-studio-cookie http://localhost:8080/tasks
+curl -sS -b /tmp/material-studio-cookie -X POST http://localhost:8080/auth/logout
+```
+
+### 会话与密码
+
+- 密码使用 JDK 自带的 PBKDF2-HMAC-SHA256 加随机盐存储，数据库不保存明文密码。
+- 登录成功后生成随机会话令牌，浏览器只保存 HttpOnly Cookie；数据库仅保存令牌的 SHA-256 哈希。
+- Cookie 使用 `HttpOnly`、`SameSite=Lax` 和 `Path=/`，默认有效期 7 天。
+- 退出登录会删除数据库会话并清除 Cookie，而不是只修改前端状态。
+- `GET /auth/me` 返回当前用户；`POST /auth/login` 登录；`POST /auth/logout` 退出。
+
+认证配置：
+
+| 配置项 | 环境变量 | 默认值 |
+|---|---|---|
+| `app.auth.cookie-name` | `APP_AUTH_COOKIE_NAME` | `material_studio_session` |
+| `app.auth.cookie-secure` | `APP_AUTH_COOKIE_SECURE` | `false` |
+| `app.auth.session-ttl-seconds` | `APP_AUTH_SESSION_TTL_SECONDS` | `604800` |
+| `app.auth.password-iterations` | `APP_AUTH_PASSWORD_ITERATIONS` | `210000` |
+
+生产环境通过 HTTPS 部署时应设置 `APP_AUTH_COOKIE_SECURE=true`。
+
+### 个人任务与素材归属
+
+- 模板列表和详情可以匿名浏览；上传、提交任务、任务查询和个人历史要求登录。
+- `GET /tasks` 始终使用当前会话用户，不接受客户端传入用户 ID。
+- `GET /tasks/{id}` 同时校验任务 ID 和用户 ID，其他用户不能通过 UUID 读取任务。
+- `upload_asset` 增加 `user_id`，删除素材、读取素材内容以及提交任务时都会校验所有者。
+- 上传图片通过需要登录的 `/uploads/{id}/content` 读取，不再公开静态文件目录。
+- 前端任务轮询作用域使用 `user:<id>`；退出登录或会话过期时会清理旧用户的轮询和请求。
+
+该认证实现适合本地演示和轻量单实例项目，不包含注册、找回密码、登录限流和风控。真实生产环境应使用成熟认证框架或身份服务。
+
+### 多用户隔离演示
+
+1. 使用 `demo / demo1234` 登录并提交一个制作任务。
+2. 退出后使用 `alice / alice1234` 登录，确认“我的任务”为空。
+3. 退出并重新登录 `demo`，确认原任务仍存在；刷新页面后未完成任务继续跟踪。
+4. 登录后复制一个任务地址测试：退出并登录另一账号，直接访问该任务应返回不存在。
+5. 退出登录后访问 `/tasks`，页面应显示登录入口；直接请求受保护接口应返回 401。
 
 ## 历史记录与刷新恢复
 
@@ -134,6 +188,7 @@ curl -sS -X PUT http://localhost:8080/dev/simulation \
 6. 未完成任务存在时刷新 `/tasks`：应从服务端恢复记录并继续更新，成功结果可以预览。
 7. 配置某阶段失败后提交任务：应停在失败阶段，后续阶段不推进，页面显示失败阶段和原因。
 8. 键盘操作：首次按 Tab 应可聚焦“跳到主要内容”，导航、分类、上传替换/移除、重试等操作应有可见焦点。
+9. 匿名访问 `/tasks` 应显示登录入口；登录后返回该页并恢复个人任务。
 
 ## 验证
 

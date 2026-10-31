@@ -35,6 +35,13 @@ export type AppUser = {
   createdAt: string;
 };
 
+export type AuthStatus = "loading" | "authenticated" | "anonymous" | "error";
+
+export type LoginCredentials = {
+  username: string;
+  password: string;
+};
+
 export type TaskAsset = {
   id: number;
   taskId: string;
