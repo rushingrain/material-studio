@@ -197,6 +197,24 @@ button { color: inherit; }
 .detail-skeleton-description { height: 10px; margin-bottom: 8px; width: 90%; }
 .detail-skeleton-panel { height: 230px; margin-top: 32px; }
 
+.history-page-shell { display: flex; flex-direction: column; min-height: calc(100vh - 78px); padding-top: 58px; }
+.history-page { flex: 1; margin: 0 auto; max-width: 880px; width: 100%; }
+.history-heading { align-items: end; border-bottom: 1px solid var(--line); display: flex; gap: 30px; justify-content: space-between; padding-bottom: 28px; }
+.history-heading .eyebrow { margin-bottom: 12px; }
+.history-heading h1 { font-size: clamp(32px, 4vw, 46px); font-weight: 500; letter-spacing: -.05em; margin: 0; }
+.history-heading > div > p:last-child { color: var(--muted); font-size: 12px; line-height: 1.8; margin: 12px 0 0; }
+.history-summary { align-items: end; display: flex; flex: 0 0 auto; flex-direction: column; gap: 4px; }
+.history-summary strong { color: var(--olive); font-family: var(--font-mono); font-size: 31px; font-weight: 400; line-height: 1; }
+.history-summary span { color: #929186; font-size: 9px; letter-spacing: .05em; }
+.history-task-list { gap: 14px; margin-top: 26px; }
+.history-loading-list { display: grid; gap: 14px; margin-top: 26px; }
+.history-loading-card { background: #f1f0e9; min-height: 170px; padding: 22px; }
+.history-loading-title { margin-bottom: 24px; width: 24%; }
+.history-loading-line { margin-bottom: 12px; width: 72%; }
+.history-loading-line-short { width: 45%; }
+.history-feedback { margin: 28px 0 0; min-height: 330px; }
+.history-footer { margin-top: auto; padding-top: 48px; }
+
 @media (max-width: 900px) {
   .header-inner, .page-shell { width: min(calc(100% - 48px), 720px); }
   .hero-section { min-height: 460px; }
@@ -238,6 +256,11 @@ button { color: inherit; }
   .detail-copy > .detail-description { margin-bottom: 22px; }
   .requirements-panel { padding: 19px 17px 16px; }
   .detail-feedback { margin: 20px 0 45px; min-height: 330px; }
+  .history-page-shell { min-height: calc(100vh - 66px); padding-top: 34px; }
+  .history-heading { align-items: start; flex-direction: column; gap: 17px; }
+  .history-summary { align-items: start; flex-direction: row; gap: 8px; }
+  .history-summary strong { font-size: 24px; }
+  .history-footer { padding-top: 34px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }

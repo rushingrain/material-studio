@@ -83,4 +83,4 @@ material-studio/
 ├── mysql/
 │   └── init/                        # Compose 初始化 SQL（schema + 种子数据）
 │
-└── upload/                         # 本地开发上传目录（.gitignore）
+└── uploads/                         # 本地开发上传目录（.gitignore）

@@ -14,7 +14,8 @@ export function SiteHeader() {
           <span className="brand-word">拾光<span>STUDIO</span></span>
         </Link>
         <nav className="header-nav" aria-label="主导航">
-          <Link href="/" aria-current="page">灵感模板</Link>
+          <Link href="/">灵感模板</Link>
+          <Link href="/tasks">我的任务</Link>
           <span className="nav-note">把日常做成作品</span>
         </nav>
       </div>

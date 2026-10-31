@@ -37,6 +37,10 @@ const STAGE_ORDER: Record<TaskStage, number> = {
 
 type StepState = "pending" | "active" | "complete" | "failed";
 
+function formatTaskTime(value: string): string {
+  return value.replace("T", " ").replace(/\.\d+.*$/, "").slice(0, 19);
+}
+
 function getStepState(task: Task, stage: TaskStage): StepState {
   const currentStage = task.status === "FAILED" ? task.failureStage : task.stage;
   if (!currentStage) return "pending";
@@ -106,6 +110,7 @@ export function TaskStatusPanel({
             当前状态：<strong>{STATUS_LABELS[task.status]}</strong>
             {currentStage ? ` · ${STAGE_LABELS[currentStage]}` : ""}
           </p>
+          <p>创建时间：{formatTaskTime(task.createdAt)}</p>
           {task.status === "FAILED" && (
             <>
               <p>

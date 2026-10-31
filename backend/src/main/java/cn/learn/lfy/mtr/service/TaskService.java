@@ -121,6 +121,11 @@ public class TaskService {
                 .orElseThrow(() -> new BusinessException(ApiErrorCode.TASK_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public List<Task> findForCurrentUser() {
+        return taskMapper.findByUserId(demoUserId);
+    }
+
     private static List<String> normalizeAssetIds(List<String> assetIds) {
         if (assetIds == null || assetIds.isEmpty()) {
             throw new BusinessException(ApiErrorCode.INVALID_REQUEST, "请上传所需素材");

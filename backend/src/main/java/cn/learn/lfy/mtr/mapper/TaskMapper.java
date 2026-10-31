@@ -5,6 +5,7 @@ import cn.learn.lfy.mtr.domain.model.Task;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 @Mapper
@@ -13,6 +14,8 @@ public interface TaskMapper {
     int insert(@Param("task") Task task);
 
     Optional<Task> findById(@Param("taskId") String taskId);
+
+    List<Task> findByUserId(@Param("userId") long userId);
 
     int enterStage(@Param("taskId") String taskId, @Param("stage") TaskStage stage);
 

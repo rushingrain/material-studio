@@ -5,14 +5,12 @@ import { MaterialUploader } from "@/components/material-uploader";
 import { TaskStatusPanel } from "@/components/task-status-panel";
 import { useTaskPolling } from "@/hooks/useTaskPolling";
 import { createTask } from "@/lib/api";
+import { DEMO_USER_SCOPE_KEY } from "@/lib/identity";
 import type { Template } from "@/lib/types";
-
-// 当前演示身份固定；接入用户切换后，将用户维度传入轮询作用域。
-const TASK_SCOPE_KEY = "demo-user";
 
 export function TemplateWorkflow({ template }: { template: Template }) {
   const { tasks, queryErrors, trackedTaskIds, trackTask, retryTask } = useTaskPolling({
-    scopeKey: TASK_SCOPE_KEY,
+    scopeKey: DEMO_USER_SCOPE_KEY,
   });
   const submitController = useRef<AbortController | null>(null);
   const latestTaskId = trackedTaskIds.at(-1) ?? null;

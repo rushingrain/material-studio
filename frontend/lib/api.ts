@@ -47,6 +47,10 @@ export async function getTask(id: string, signal?: AbortSignal): Promise<Task> {
   return apiRequest<Task>(`/tasks/${encodeURIComponent(id)}`, { signal });
 }
 
+export async function getTasks(signal?: AbortSignal): Promise<Task[]> {
+  return apiRequest<Task[]>("/tasks", { signal });
+}
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   const headers = new Headers(init?.headers);

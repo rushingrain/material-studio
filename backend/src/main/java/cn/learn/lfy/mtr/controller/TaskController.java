@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
@@ -25,6 +27,11 @@ public class TaskController {
     @PostMapping
     public ApiResponse<TaskCreatedResponse> create(@Valid @RequestBody CreateTaskRequest request) {
         return ApiResponse.success(taskService.submit(request));
+    }
+
+    @GetMapping
+    public ApiResponse<List<Task>> list() {
+        return ApiResponse.success(taskService.findForCurrentUser());
     }
 
     @GetMapping("/{id}")

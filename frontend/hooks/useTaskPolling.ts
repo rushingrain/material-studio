@@ -148,6 +148,44 @@ export function useTaskPolling({
     startTaskInterval(taskId);
   }, [fetchTask, startTaskInterval]);
 
+  const hydrateTasks = useCallback((taskList: Task[]) => {
+    if (!mounted.current) return;
+
+    // 历史查询返回新的完整快照，先停止旧请求，再按记录状态重建轮询。
+    controllers.current.forEach((controller) => controller.abort());
+    controllers.current.clear();
+    intervals.current.forEach((intervalId) => window.clearInterval(intervalId));
+    intervals.current.clear();
+
+    const seen = new Set<string>();
+    const records = taskList.filter((task) => {
+      if (!task.id || seen.has(task.id)) return false;
+      seen.add(task.id);
+      return true;
+    });
+    const nextTasks = Object.fromEntries(records.map((task) => [task.id, task]));
+    const nextTaskIds = records.map((task) => task.id);
+
+    trackedIdsRef.current.clear();
+    terminalIds.current.clear();
+    nextTaskIds.forEach((taskId) => trackedIdsRef.current.add(taskId));
+
+    setState({
+      scopeKey,
+      tasks: nextTasks,
+      queryErrors: {},
+      trackedTaskIds: nextTaskIds,
+    });
+
+    records.forEach((task) => {
+      if (isTerminalStatus(task.status)) {
+        terminalIds.current.add(task.id);
+      } else {
+        startTaskInterval(task.id);
+      }
+    });
+  }, [scopeKey, startTaskInterval]);
+
   useEffect(() => {
     mounted.current = true;
     const activeIntervals = intervals.current;
@@ -175,5 +213,6 @@ export function useTaskPolling({
     trackedTaskIds: currentState.trackedTaskIds,
     trackTask,
     retryTask,
+    hydrateTasks,
   };
 }
