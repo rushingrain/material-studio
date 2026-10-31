@@ -13,4 +13,6 @@ public interface TemplateMapper {
     List<Template> findActiveTemplates(@Param("category") String category);
 
     Optional<Template> findActiveById(@Param("id") long id);
+
+    Optional<Template> findById(@Param("id") long id);
 }

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.learn.lfy.mtr.mapper.TaskMapper">
+    <resultMap id="taskResultMap" type="cn.learn.lfy.mtr.domain.model.Task">
+        <constructor>
+            <idArg column="id" javaType="java.lang.String"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="template_id" javaType="java.lang.Long"/>
+            <arg column="status" javaType="cn.learn.lfy.mtr.domain.enums.TaskStatus"/>
+            <arg column="stage" javaType="cn.learn.lfy.mtr.domain.enums.TaskStage"/>
+            <arg column="failure_stage" javaType="cn.learn.lfy.mtr.domain.enums.TaskStage"/>
+            <arg column="failure_reason" javaType="java.lang.String"/>
+            <arg column="result_url" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+            <arg column="completed_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="taskColumns">
+        id, user_id, template_id, status, stage, failure_stage, failure_reason,
+        result_url, created_at, updated_at, completed_at
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO task (id, user_id, template_id, status, stage)
+        VALUES (#{task.id}, #{task.userId}, #{task.templateId}, #{task.status}, #{task.stage})
+    </insert>
+
+    <select id="findById" resultMap="taskResultMap">
+        SELECT <include refid="taskColumns"/>
+        FROM task
+        WHERE id = #{taskId}
+        LIMIT 1
+    </select>
+
+    <update id="enterStage">
+        UPDATE task
+        SET status = 'PROCESSING', stage = #{stage}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{taskId}
+          AND status IN ('PENDING', 'PROCESSING')
+    </update>
+
+    <update id="finishStage">
+        UPDATE task
+        SET status = 'PROCESSING', stage = #{stage}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{taskId}
+          AND stage = #{stage}
+          AND status IN ('PENDING', 'PROCESSING')
+    </update>
+
+    <update id="markSucceeded">
+        UPDATE task
+        SET status = 'SUCCEEDED',
+            stage = 'COMPLETED',
+            failure_stage = NULL,
+            failure_reason = NULL,
+            result_url = #{resultUrl},
+            updated_at = CURRENT_TIMESTAMP,
+            completed_at = CURRENT_TIMESTAMP
+        WHERE id = #{taskId}
+          AND status IN ('PENDING', 'PROCESSING')
+    </update>
+
+    <update id="markFailed">
+        UPDATE task
+        SET status = 'FAILED',
+            stage = 'FAILED',
+            failure_stage = #{failureStage},
+            failure_reason = #{failureReason},
+            result_url = NULL,
+            updated_at = CURRENT_TIMESTAMP,
+            completed_at = CURRENT_TIMESTAMP
+        WHERE id = #{taskId}
+          AND status IN ('PENDING', 'PROCESSING')
+    </update>
+</mapper>

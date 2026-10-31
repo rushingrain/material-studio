@@ -9,7 +9,6 @@ import cn.learn.lfy.mtr.mapper.TemplateMapper;
 import cn.learn.lfy.mtr.mapper.UploadAssetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,16 +37,16 @@ public class UploadService {
 
     private final TemplateMapper templateMapper;
     private final UploadAssetMapper uploadAssetMapper;
-    private final Path uploadRoot;
+    private final UploadStorage uploadStorage;
 
     public UploadService(
             TemplateMapper templateMapper,
             UploadAssetMapper uploadAssetMapper,
-            @Value("${app.upload-dir}") String uploadDir
+            UploadStorage uploadStorage
     ) {
         this.templateMapper = templateMapper;
         this.uploadAssetMapper = uploadAssetMapper;
-        this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.uploadStorage = uploadStorage;
     }
 
     public UploadAssetResponse upload(long templateId, MultipartFile file) {
@@ -74,7 +73,7 @@ public class UploadService {
 
         String id = UUID.randomUUID().toString();
         String storageKey = buildStorageKey(id, mimeType);
-        Path target = resolveStoredFile(storageKey);
+        Path target = uploadStorage.resolve(storageKey);
         try {
             Files.createDirectories(target.getParent());
             try (InputStream inputStream = file.getInputStream()) {
@@ -111,7 +110,7 @@ public class UploadService {
                 .orElseThrow(() -> new BusinessException(ApiErrorCode.ASSET_NOT_FOUND));
         uploadAssetMapper.deleteById(id);
         try {
-            Files.deleteIfExists(resolveStoredFile(asset.storageKey()));
+            Files.deleteIfExists(uploadStorage.resolve(asset.storageKey()));
         } catch (IOException exception) {
             log.warn("删除上传文件失败：{}", asset.storageKey(), exception);
         }
@@ -158,14 +157,6 @@ public class UploadService {
     private String buildStorageKey(String id, String mimeType) {
         return LocalDate.now().format(STORAGE_DATE_FORMAT)
                 + "/" + id + "." + MIME_EXTENSIONS.get(mimeType);
-    }
-
-    private Path resolveStoredFile(String storageKey) {
-        Path target = uploadRoot.resolve(storageKey).normalize();
-        if (!target.startsWith(uploadRoot)) {
-            throw new BusinessException(ApiErrorCode.INTERNAL_ERROR, "素材存储路径无效");
-        }
-        return target;
     }
 
     private static String sanitizeFilename(String filename, String extension) {

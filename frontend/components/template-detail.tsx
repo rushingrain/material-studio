@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, apiRequest, assetUrl } from "@/lib/api";
-import { MaterialUploader } from "@/components/material-uploader";
+import { TemplateWorkflow } from "@/components/template-workflow";
 import type { ApiState, Template } from "@/lib/types";
 
 export function TemplateDetailSkeleton() {
@@ -107,7 +107,7 @@ export function TemplateDetail() {
         <h1>{template.name}</h1>
         <p className="detail-description">{template.description}</p>
 
-        <MaterialUploader template={template} />
+        <TemplateWorkflow key={template.id} template={template} />
       </div>
     </article>
   );

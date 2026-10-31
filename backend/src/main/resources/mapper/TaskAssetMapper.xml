@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.learn.lfy.mtr.mapper.TaskAssetMapper">
+    <resultMap id="taskAssetResultMap" type="cn.learn.lfy.mtr.domain.model.TaskAsset">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="task_id" javaType="java.lang.String"/>
+            <arg column="original_filename" javaType="java.lang.String"/>
+            <arg column="storage_key" javaType="java.lang.String"/>
+            <arg column="mime_type" javaType="java.lang.String"/>
+            <arg column="size_bytes" javaType="java.lang.Long"/>
+            <arg column="sort_order" javaType="java.lang.Integer"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO task_asset
+            (task_id, original_filename, storage_key, mime_type, size_bytes, sort_order)
+        VALUES
+            (#{asset.taskId}, #{asset.originalFilename}, #{asset.storageKey},
+             #{asset.mimeType}, #{asset.sizeBytes}, #{asset.sortOrder})
+    </insert>
+
+    <select id="findByTaskId" resultMap="taskAssetResultMap">
+        SELECT id, task_id, original_filename, storage_key, mime_type, size_bytes, sort_order, created_at
+        FROM task_asset
+        WHERE task_id = #{taskId}
+        ORDER BY sort_order ASC
+    </select>
+</mapper>

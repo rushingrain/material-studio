@@ -52,6 +52,10 @@ export type UploadedAsset = {
   sizeBytes: number;
 };
 
+export type CreatedTask = {
+  id: string;
+};
+
 export type Task = {
   id: string;
   userId: number;

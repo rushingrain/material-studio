@@ -82,6 +82,7 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                 accept={template.allowedMimeTypes.join(",")}
                 aria-label={`选择第 ${index + 1} 张图片`}
                 className="upload-slot-input"
+                disabled={isSubmitted || isSubmitting}
                 id={inputId}
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
@@ -118,7 +119,7 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                 </div>
               )}
 
-              {previewUrl && !slot.uploading && (
+              {previewUrl && !slot.uploading && !isSubmitted && !isSubmitting && (
                 <div className="upload-slot-actions">
                   <label
                     className="upload-slot-action"

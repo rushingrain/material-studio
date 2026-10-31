@@ -1,4 +1,4 @@
-import type { ApiResponse, UploadedAsset } from "./types";
+import type { ApiResponse, CreatedTask, Task, UploadedAsset } from "./types";
 
 export class ApiError extends Error {
   readonly code: number;
@@ -28,6 +28,18 @@ export async function uploadAsset(templateId: number, file: File, signal?: Abort
 
 export async function deleteUploadedAsset(id: string): Promise<void> {
   await apiRequest<void>(`/uploads/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function createTask(templateId: number, assetIds: string[]): Promise<CreatedTask> {
+  return apiRequest<CreatedTask>("/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ templateId, assetIds }),
+  });
+}
+
+export async function getTask(id: string, signal?: AbortSignal): Promise<Task> {
+  return apiRequest<Task>(`/tasks/${encodeURIComponent(id)}`, { signal });
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {

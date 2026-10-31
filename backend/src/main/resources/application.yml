@@ -3,8 +3,13 @@ server:
 
 app:
   upload-dir: ${APP_UPLOAD_DIR:./uploads}
+  demo-user-id: ${APP_DEMO_USER_ID:1}
   cors:
     allowed-origin: ${APP_CORS_ALLOWED_ORIGIN:http://localhost:3000}
+  execution:
+    core-pool-size: ${APP_TASK_CORE_POOL_SIZE:2}
+    max-pool-size: ${APP_TASK_MAX_POOL_SIZE:2}
+    queue-capacity: ${APP_TASK_QUEUE_CAPACITY:100}
   simulation:
     step-delay-ms: ${APP_STEP_DELAY_MS:1000}
     fail-stage: ${APP_FAIL_STAGE:}

@@ -43,4 +43,11 @@
         WHERE id = #{id} AND active = TRUE
         LIMIT 1
     </select>
+
+    <select id="findById" resultMap="templateResultMap">
+        SELECT <include refid="templateColumns"/>
+        FROM template
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
 </mapper>

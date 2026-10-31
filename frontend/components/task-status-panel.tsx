@@ -1,0 +1,145 @@
+"use client";
+
+import Image from "next/image";
+import { assetUrl } from "@/lib/api";
+import type { Task, TaskStage, TaskStatus } from "@/lib/types";
+
+const STAGES: Array<{ stage: TaskStage; label: string }> = [
+  { stage: "ASSET_CHECK", label: "素材检查" },
+  { stage: "SIMULATING", label: "模拟生成" },
+  { stage: "RESULT_PACKAGING", label: "结果整理" },
+];
+
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  PENDING: "等待处理",
+  PROCESSING: "处理中",
+  SUCCEEDED: "制作完成",
+  FAILED: "处理失败",
+};
+
+const STAGE_LABELS: Record<TaskStage, string> = {
+  QUEUED: "等待处理",
+  ASSET_CHECK: "素材检查",
+  SIMULATING: "模拟生成",
+  RESULT_PACKAGING: "结果整理",
+  COMPLETED: "制作完成",
+  FAILED: "处理失败",
+};
+
+const STAGE_ORDER: Record<TaskStage, number> = {
+  QUEUED: 0,
+  ASSET_CHECK: 1,
+  SIMULATING: 2,
+  RESULT_PACKAGING: 3,
+  COMPLETED: 4,
+  FAILED: 5,
+};
+
+type StepState = "pending" | "active" | "complete" | "failed";
+
+function getStepState(task: Task, stage: TaskStage): StepState {
+  const currentStage = task.status === "FAILED" ? task.failureStage : task.stage;
+  if (!currentStage) return "pending";
+
+  const currentOrder = STAGE_ORDER[currentStage];
+  const stepOrder = STAGE_ORDER[stage];
+  if (task.status === "FAILED" && currentOrder === stepOrder) return "failed";
+  if (currentOrder > stepOrder) return "complete";
+  if (currentOrder === stepOrder) return "active";
+  return "pending";
+}
+
+export function TaskStatusPanel({
+  taskId,
+  task,
+  queryError,
+}: {
+  taskId: string;
+  task: Task | null;
+  queryError: string | null;
+}) {
+  const currentStage = task?.status === "FAILED" ? task.failureStage : task?.stage;
+  const badgeText = task ? STATUS_LABELS[task.status] : queryError ? "查询异常" : "读取中";
+  const badgeClass = task
+    ? `is-${task.status.toLowerCase()}`
+    : queryError
+      ? "is-query-error"
+      : "is-pending";
+
+  return (
+    <section
+      aria-busy={!task && !queryError}
+      aria-live="polite"
+      className="task-status-panel"
+    >
+      <div className="task-status-heading">
+        <div>
+          <p className="eyebrow">服务端处理进度</p>
+          <h2>任务状态</h2>
+        </div>
+        <span className={`task-status-badge ${badgeClass}`}>{badgeText}</span>
+      </div>
+
+      {task && (
+        <ol className="task-stage-list" aria-label="任务处理阶段">
+          {STAGES.map((item, index) => {
+            const state = getStepState(task, item.stage);
+            return (
+              <li className={`task-stage is-${state}`} key={item.stage}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {item.label}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {!task && !queryError && (
+        <p className="task-status-loading" role="status">任务已提交，正在读取状态…</p>
+      )}
+
+      {task && (
+        <div className="task-status-meta">
+          <p>
+            当前状态：<strong>{STATUS_LABELS[task.status]}</strong>
+            {currentStage ? ` · ${STAGE_LABELS[currentStage]}` : ""}
+          </p>
+          {task.status === "FAILED" && (
+            <p>
+              失败原因：<strong>{task.failureReason ?? "任务处理失败，请稍后重试"}</strong>
+            </p>
+          )}
+          {task.status === "SUCCEEDED" && task.resultUrl && (
+            <>
+              <div className="task-result-preview">
+                <Image
+                  alt="任务结果预览"
+                  height={480}
+                  src={assetUrl(task.resultUrl)}
+                  unoptimized
+                  width={640}
+                />
+              </div>
+              <a
+                className="task-result-link"
+                href={assetUrl(task.resultUrl)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                查看结果原图 ↗
+              </a>
+            </>
+          )}
+        </div>
+      )}
+
+      {queryError && (
+        <p className="task-query-error" role="alert">
+          状态查询失败：{queryError}。任务状态未因此改变，正在自动重试。
+        </p>
+      )}
+
+      <span className="task-id">任务 ID：{taskId}</span>
+    </section>
+  );
+}
