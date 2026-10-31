@@ -2,7 +2,7 @@ import { TemplateGallery } from "@/components/template-gallery";
 
 export default function Home() {
   return (
-    <main className="page-shell">
+    <main className="page-shell" id="main-content" tabIndex={-1}>
       <section className="hero-section">
         <div className="hero-copy">
           <p className="eyebrow"><span className="eyebrow-dot" /> 灵感，从一张照片开始</p>
@@ -22,7 +22,7 @@ export default function Home() {
           <div className="art-sparkle sparkle-two">✳</div>
           <div className="art-caption">A LITTLE MOMENT<br /><span>NO. 04 — AUTUMN LIGHT</span></div>
         </div>
-        <div className="hero-index"><span>01</span> / 04 <i /></div>
+        <div className="hero-index" aria-hidden="true"><span>01</span> / 04 <i /></div>
       </section>
 
       <section className="templates-section" id="templates">

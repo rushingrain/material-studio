@@ -2,7 +2,7 @@ import { TaskHistory } from "@/components/task-history";
 
 export default function TasksPage() {
   return (
-    <main className="page-shell history-page-shell">
+    <main className="page-shell history-page-shell" id="main-content" tabIndex={-1}>
       <TaskHistory />
       <footer className="site-footer history-footer">
         <span>拾光 STUDIO</span>

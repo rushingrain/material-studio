@@ -49,7 +49,7 @@ export function TemplateWorkflow({ template }: { template: Template }) {
         template={template}
       />
       {trackedTaskIds.length > 0 && (
-        <div className="task-status-list" aria-label="已提交任务">
+        <div className="task-status-list" aria-label="已提交任务" role="list">
           {trackedTaskIds.map((taskId) => (
             <TaskStatusPanel
               key={taskId}

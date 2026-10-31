@@ -88,7 +88,7 @@ export function TemplateDetail() {
 
   const template = state.data;
   return (
-    <article className="detail-layout">
+    <article aria-labelledby="template-title" className="detail-layout">
       <div className="detail-cover-wrap">
         <Image
           alt={`${template.name}模板封面`}
@@ -104,7 +104,7 @@ export function TemplateDetail() {
       <div className="detail-copy">
         <Link className="back-link" href="/">← <span>返回灵感列表</span></Link>
         <p className="eyebrow">{template.category} <span>·</span> 创作模板</p>
-        <h1>{template.name}</h1>
+        <h1 id="template-title">{template.name}</h1>
         <p className="detail-description">{template.description}</p>
 
         <TemplateWorkflow key={template.id} template={template} />

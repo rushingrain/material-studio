@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { SiteHeaderNav, SiteHeaderNavFallback } from "@/components/site-header-nav";
 
 export function SiteHeader() {
   return (
@@ -13,11 +15,9 @@ export function SiteHeader() {
           </span>
           <span className="brand-word">拾光<span>STUDIO</span></span>
         </Link>
-        <nav className="header-nav" aria-label="主导航">
-          <Link href="/">灵感模板</Link>
-          <Link href="/tasks">我的任务</Link>
-          <span className="nav-note">把日常做成作品</span>
-        </nav>
+        <Suspense fallback={<SiteHeaderNavFallback />}>
+          <SiteHeaderNav />
+        </Suspense>
       </div>
     </header>
   );

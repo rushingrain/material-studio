@@ -96,7 +96,9 @@ export function TemplateGallery() {
           ))}
         </div>
         {state.status === "success" && (
-          <p className="result-count">精选模板 <span>{String(state.data.length).padStart(2, "0")}</span></p>
+          <p className="result-count" aria-live="polite">
+            精选模板 <span>{String(state.data.length).padStart(2, "0")}</span>
+          </p>
         )}
       </section>
 
@@ -117,7 +119,12 @@ export function TemplateGallery() {
       {state.status === "success" && state.data.length > 0 && (
         <div className="template-grid">
           {state.data.map((template, index) => (
-            <Link className="template-card" href={`/templates/${template.id}`} key={template.id}>
+            <Link
+              aria-label={`查看${template.name}模板`}
+              className="template-card"
+              href={`/templates/${template.id}`}
+              key={template.id}
+            >
               <div className="template-cover-wrap">
                 <Image
                   alt={`${template.name}模板封面`}

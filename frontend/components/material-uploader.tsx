@@ -38,6 +38,8 @@ export function MaterialUploader({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<SubmitMessage | null>(null);
   const submitDisabled = !allReady || isSubmitting || latestTaskActive;
+  const summaryId = `material-upload-summary-${template.id}`;
+  const submitMessageId = `material-upload-message-${template.id}`;
 
   const handleSubmit = async () => {
     if (submitDisabled) return;
@@ -83,6 +85,7 @@ export function MaterialUploader({
       <div className="upload-slots" aria-label={`需要上传 ${template.requiredImageCount} 张图片`}>
         {slots.map((slot, index) => {
           const inputId = `material-upload-${template.id}-${index}`;
+          const errorId = `${inputId}-error`;
           const previewUrl = slot.localPreviewUrl ?? (slot.asset ? assetUrl(slot.asset.url) : null);
           const slotNumber = String(index + 1).padStart(2, "0");
           return (
@@ -94,6 +97,8 @@ export function MaterialUploader({
               <span className="upload-slot-number" aria-hidden="true">{slotNumber}</span>
               <input
                 accept={template.allowedMimeTypes.join(",")}
+                aria-describedby={`${summaryId}${slot.error ? ` ${errorId}` : ""}`}
+                aria-invalid={slot.error ? true : undefined}
                 aria-label={`选择第 ${index + 1} 张图片`}
                 className="upload-slot-input"
                 disabled={latestTaskActive || isSubmitting}
@@ -172,14 +177,18 @@ export function MaterialUploader({
               )}
 
               {slot.error && (
-                <p className="upload-slot-error" role="alert">{slot.error}</p>
+                <p className="upload-slot-error" id={errorId} role="alert">{slot.error}</p>
               )}
             </div>
           );
         })}
       </div>
 
-      <p className={`upload-summary${allReady ? " is-ready" : ""}`} aria-live="polite">
+      <p
+        className={`upload-summary${allReady ? " is-ready" : ""}`}
+        id={summaryId}
+        aria-live="polite"
+      >
         {uploadingCount > 0
           ? `正在上传 ${uploadingCount} 张图片…`
           : allReady
@@ -201,6 +210,7 @@ export function MaterialUploader({
       <div className="detail-cta-row">
         <button
           className={`button button-dark detail-cta${latestTaskActive ? " is-task-active" : ""}`}
+          aria-describedby={submitMessage ? submitMessageId : undefined}
           disabled={submitDisabled}
           onClick={() => void handleSubmit()}
           type="button"
@@ -219,6 +229,7 @@ export function MaterialUploader({
         {submitMessage && (
           <p
             className={`upload-submit-message is-${submitMessage.tone}`}
+            id={submitMessageId}
             role={submitMessage.tone === "error" ? "alert" : "status"}
           >
             {submitMessage.text}

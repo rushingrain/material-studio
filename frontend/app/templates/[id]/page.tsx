@@ -3,7 +3,7 @@ import { TemplateDetail, TemplateDetailSkeleton } from "@/components/template-de
 
 export default function TemplatePage() {
   return (
-    <main className="page-shell detail-page-shell">
+    <main className="page-shell detail-page-shell" id="main-content" tabIndex={-1}>
       <Suspense fallback={<TemplateDetailSkeleton />}>
         <TemplateDetail />
       </Suspense>

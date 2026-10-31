@@ -117,7 +117,11 @@ export function TaskHistory() {
       )}
 
       {state.status === "success" && trackedTaskIds.length > 0 && (
-        <div className="task-status-list history-task-list" aria-label="个人任务记录">
+        <div
+          className="task-status-list history-task-list"
+          aria-label="个人任务记录"
+          role="list"
+        >
           {trackedTaskIds.map((taskId) => (
             <TaskStatusPanel
               key={taskId}

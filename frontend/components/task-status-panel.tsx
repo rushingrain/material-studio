@@ -37,6 +37,13 @@ const STAGE_ORDER: Record<TaskStage, number> = {
 
 type StepState = "pending" | "active" | "complete" | "failed";
 
+const STEP_STATE_LABELS: Record<StepState, string> = {
+  pending: "尚未开始",
+  active: "正在进行",
+  complete: "已完成",
+  failed: "失败",
+};
+
 function formatTaskTime(value: string): string {
   return value.replace("T", " ").replace(/\.\d+.*$/, "").slice(0, 19);
 }
@@ -71,17 +78,24 @@ export function TaskStatusPanel({
     : queryError
       ? "is-query-error"
       : "is-pending";
+  const panelClass = task
+    ? `is-${task.status.toLowerCase()}`
+    : queryError
+      ? "is-query-error"
+      : "is-loading";
+  const shortTaskId = taskId.slice(0, 8);
 
   return (
     <section
       aria-busy={!task && !queryError}
       aria-live="polite"
-      className="task-status-panel"
+      className={`task-status-panel ${panelClass}`}
+      role="listitem"
     >
       <div className="task-status-heading">
         <div>
           <p className="eyebrow">服务端处理进度</p>
-          <h2>任务状态</h2>
+          <h2>任务 #{shortTaskId}</h2>
         </div>
         <span className={`task-status-badge ${badgeClass}`}>{badgeText}</span>
       </div>
@@ -91,9 +105,16 @@ export function TaskStatusPanel({
           {STAGES.map((item, index) => {
             const state = getStepState(task, item.stage);
             return (
-              <li className={`task-stage is-${state}`} key={item.stage}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                {item.label}
+              <li
+                aria-current={state === "active" || state === "failed" ? "step" : undefined}
+                className={`task-stage is-${state}`}
+                key={item.stage}
+              >
+                <span aria-hidden="true" className="task-stage-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="task-stage-label">{item.label}</span>
+                <span className="visually-hidden">，{STEP_STATE_LABELS[state]}</span>
               </li>
             );
           })}
@@ -112,20 +133,21 @@ export function TaskStatusPanel({
           </p>
           <p>创建时间：{formatTaskTime(task.createdAt)}</p>
           {task.status === "FAILED" && (
-            <>
+            <div className="task-failure-detail">
               <p>
                 失败阶段：<strong>{task.failureStage ? STAGE_LABELS[task.failureStage] : "处理中"}</strong>
               </p>
               <p>
                 失败原因：<strong>{task.failureReason ?? "任务处理失败，请稍后重试"}</strong>
               </p>
-            </>
+            </div>
           )}
           {task.status === "SUCCEEDED" && task.resultUrl && (
-            <>
+            <div className="task-success-detail">
+              <h3>制作结果</h3>
               <div className="task-result-preview">
                 <Image
-                  alt="任务结果预览"
+                  alt={`任务 #${shortTaskId} 制作结果预览`}
                   height={480}
                   src={assetUrl(task.resultUrl)}
                   unoptimized
@@ -140,7 +162,7 @@ export function TaskStatusPanel({
               >
                 查看结果原图 ↗
               </a>
-            </>
+            </div>
           )}
           {task.status === "SUCCEEDED" && !task.resultUrl && (
             <p>制作已经完成，但结果地址暂未返回。</p>
@@ -151,11 +173,17 @@ export function TaskStatusPanel({
       {queryError && (
         <div className="task-query-error" role="alert">
           <p>状态查询失败：{queryError}。任务状态未因此改变，正在自动重试。</p>
-          <button onClick={onRetry} type="button">立即重试</button>
+          <button
+            aria-label={`立即重新查询任务 #${shortTaskId} 的状态`}
+            onClick={onRetry}
+            type="button"
+          >
+            立即重试
+          </button>
         </div>
       )}
 
-      <span className="task-id">任务 ID：{taskId}</span>
+      <span className="task-id">完整任务 ID：{taskId}</span>
     </section>
   );
 }

@@ -11,6 +11,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <a className="skip-link" href="#main-content">跳到主要内容</a>
         <SiteHeader />
         {children}
       </body>
