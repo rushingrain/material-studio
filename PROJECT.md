@@ -54,7 +54,9 @@ material-studio/
 ├── PROJECT.md
 ├── README.md
 ├── docker-compose.yml
+├── docker-compose.external-db.yml
 ├── .env.example
+├── .env.external-db.example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml

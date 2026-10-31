@@ -64,7 +64,9 @@ docker compose down
 material-studio/
 ├── .github/workflows/ci.yml     # CI：前端检查/测试/构建，后端测试/打包
 ├── .env.example                 # 无真实凭据的本地配置示例
+├── .env.external-db.example     # 复用现有 MySQL 的云端配置示例
 ├── docker-compose.yml           # frontend + backend + MySQL
+├── docker-compose.external-db.yml # frontend + backend，复用宿主机 MySQL
 ├── mysql/init/                  # 表结构、种子模板、认证数据
 ├── backend/
 │   ├── Dockerfile
@@ -469,20 +471,124 @@ CI 位于 `.github/workflows/ci.yml`，push 和 pull request 自动执行上述�
 
 ## 部署与回滚
 
-基本部署步骤：
+### 部署模式 A：Compose 自带 MySQL
 
-1. 准备服务器、Docker Compose 和持久卷目录。
-2. 根据 `.env.example` 提供数据库密码、公开 API 地址和允许的前端来源。
-3. 生产 HTTPS 环境设置 `APP_AUTH_COOKIE_SECURE=true`、`SPRING_PROFILES_ACTIVE=prod`。
-4. 执行 `docker compose up -d --build`。
-5. 检查 `http://<host>:3000` 登录、历史接口和上传结果。
+适用于本地演示或评测环境一键启动：
 
-回滚：
+```bash
+cp .env.example .env
+# 修改 .env
+docker compose up -d --build
+```
+
+该模式使用 `mysql-data` 和 `upload-data` 两个持久卷，不依赖宿主机 MySQL。
+
+### 部署模式 B：复用服务器现有 MySQL
+
+适用于 MySQL 已通过 Docker、云数据库或系统服务单独提供的云服务器。
+
+复制专用配置：
+
+```bash
+cp .env.external-db.example .env
+```
+
+至少修改：
+
+```dotenv
+DB_URL=jdbc:mysql://127.0.0.1:3306/material_studio?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true
+DB_USERNAME=material_studio
+DB_PASSWORD=真实数据库密码
+SPRING_PROFILES_ACTIVE=prod
+APP_CORS_ALLOWED_ORIGIN=http://YOUR_SERVER_IP:3000
+APP_AUTH_COOKIE_SECURE=false
+NEXT_PUBLIC_API_BASE_URL=http://YOUR_SERVER_IP:8080
+```
+
+启动：
+
+```bash
+docker compose -f docker-compose.external-db.yml up -d --build
+```
+
+该 Compose 文件只启动前端和后端，不创建 MySQL。Linux 下后端使用 host 网络，通过宿主机映射的 `3306` 端口连接已有 MySQL。
+
+初始化已有 MySQL：
+
+```bash
+docker exec -i mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+  < mysql/init/001_schema.sql
+
+docker exec -i mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+  < mysql/init/002_seed.sql
+
+docker exec -i mysql sh -c \
+  'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+  < mysql/init/004_auth.sql
+```
+
+`mysql` 是示例容器名，应按 `docker ps` 中的实际名称替换。
+
+MySQL 容器访问宿主机映射端口时，MySQL 看到的客户端地址通常是 Docker bridge 网关，例如 `172.17.0.1`。数据库账号的 Host 必须匹配：
+
+```sql
+CREATE USER IF NOT EXISTS
+  'material_studio'@'172.17.0.1'
+IDENTIFIED BY '与 .env 中 DB_PASSWORD 一致';
+
+GRANT ALL PRIVILEGES
+ON material_studio.*
+TO 'material_studio'@'172.17.0.1';
+
+FLUSH PRIVILEGES;
+```
+
+网络或 Docker 网关变化后，需要重新确认实际客户端地址和账号 Host。
+
+### `.env` 使用规则
+
+- Docker Compose 会自动读取项目目录下的 `.env`，用于 `${VAR}` 插值和 `env_file`。
+- `docker run` 不会自动读取 `.env`，必须显式传入：
+
+  ```bash
+  docker run --env-file .env ...
+  ```
+
+- `NEXT_PUBLIC_API_BASE_URL` 是前端构建时变量。修改后必须重新构建前端镜像，重启容器无效。
+- `APP_CORS_ALLOWED_ORIGIN` 必须与浏览器地址完全一致，包括协议、主机和端口。
+- HTTP 测试环境设置 `APP_AUTH_COOKIE_SECURE=false`；HTTPS 环境必须改为 `true`。
+- Docker 容器环境变量在创建时固定。修改 `.env` 后，Compose 使用 `up -d --force-recreate`，原生容器需要先停止、删除再重新 `docker run`；`docker restart` 不会应用新环境变量。
+- `.env` 必须保持在 `.gitignore` 中，仓库只提交 `.env.example` 和 `.env.external-db.example`。
+
+### 网络与安全
+
+- 仅 HTTP 测试时可向公网开放 `3000` 和 `8080`。
+- MySQL 的 `3306` 不应向公网开放；后端与 MySQL 应通过宿主机本地端口或专用 Docker 网络连接。
+- 正式环境建议通过 Nginx 提供 HTTPS 域名，只开放 `80/443`。
+- 上传文件必须挂载持久卷，删除容器不能删除用户上传文件。
+
+### 更新
+
+```bash
+git pull
+test -f .env || cp .env.external-db.example .env
+docker compose -f docker-compose.external-db.yml up -d --build
+```
+
+使用内置 MySQL 时：
+
+```bash
+docker compose up -d --build
+```
+
+### 回滚
 
 1. 切回上一版源码或上一组镜像。
-2. 保留并备份 `mysql-data` 和 `upload-data` 卷。
-3. 执行 `docker compose up -d --build` 恢复旧版本。
-4. 本项目迁移以新增表和可重复补齐为主；回滚应用代码前仍需确认旧版本能读取当前数据库结构。
+2. 保留 `mysql-data`、外部 MySQL 数据库和上传卷。
+3. 使用对应的 Compose 文件重新启动上一版本。
+4. 数据库迁移以新增表和可重复补齐为主；回滚应用代码前仍需确认旧版本能读取当前数据库结构。
 
 ## AI 工作流与来源
 
