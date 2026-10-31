@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getTask } from "@/lib/api";
+import {
+  addTrackedTask,
+  applyTaskQueryError,
+  applyTaskSnapshot,
+  emptyTaskPollingState,
+  isTerminalStatus,
+  type TaskPollingState,
+} from "@/lib/task-polling-state";
 import type { Task } from "@/lib/types";
 
 type TaskPollingOptions = {
@@ -9,35 +17,13 @@ type TaskPollingOptions = {
   intervalMs?: number;
 };
 
-type PollingState = {
-  scopeKey: string;
-  tasks: Record<string, Task>;
-  queryErrors: Record<string, string>;
-  trackedTaskIds: string[];
-};
-
-function isTerminalStatus(status: Task["status"]): boolean {
-  return status === "SUCCEEDED" || status === "FAILED";
-}
-
-function emptyPollingState(scopeKey: string): PollingState {
-  return {
-    scopeKey,
-    tasks: {},
-    queryErrors: {},
-    trackedTaskIds: [],
-  };
-}
-
-function stateForScope(current: PollingState, scopeKey: string): PollingState {
-  return current.scopeKey === scopeKey ? current : emptyPollingState(scopeKey);
-}
-
 export function useTaskPolling({
   scopeKey = "default",
   intervalMs = 1000,
 }: TaskPollingOptions = {}) {
-  const [state, setState] = useState<PollingState>(() => emptyPollingState(scopeKey));
+  const [state, setState] = useState<TaskPollingState>(
+    () => emptyTaskPollingState(scopeKey),
+  );
   // 每个任务独立管理定时器、请求和终态，任务之间不共享轮询状态。
   const intervals = useRef<Map<string, number>>(new Map());
   const controllers = useRef<Map<string, AbortController>>(new Map());
@@ -71,16 +57,7 @@ export function useTaskPolling({
         return;
       }
 
-      setState((current) => {
-        const currentScope = stateForScope(current, scopeKey);
-        const nextErrors = { ...currentScope.queryErrors };
-        delete nextErrors[taskId];
-        return {
-          ...currentScope,
-          tasks: { ...currentScope.tasks, [taskId]: task },
-          queryErrors: nextErrors,
-        };
-      });
+      setState((current) => applyTaskSnapshot(current, scopeKey, task));
 
       if (isTerminalStatus(task.status)) {
         terminalIds.current.add(taskId);
@@ -96,13 +73,7 @@ export function useTaskPolling({
       }
       // 查询失败只记录错误，不覆盖后端已返回的任务状态。
       const message = cause instanceof Error ? cause.message : "状态查询失败";
-      setState((current) => {
-        const currentScope = stateForScope(current, scopeKey);
-        return {
-          ...currentScope,
-          queryErrors: { ...currentScope.queryErrors, [taskId]: message },
-        };
-      });
+      setState((current) => applyTaskQueryError(current, scopeKey, taskId, message));
     } finally {
       if (controllers.current.get(taskId) === controller) {
         controllers.current.delete(taskId);
@@ -127,16 +98,7 @@ export function useTaskPolling({
     if (!mounted.current || !taskId || trackedIdsRef.current.has(taskId)) return;
 
     trackedIdsRef.current.add(taskId);
-    setState((current) => {
-      const currentScope = stateForScope(current, scopeKey);
-      const nextErrors = { ...currentScope.queryErrors };
-      delete nextErrors[taskId];
-      return {
-        ...currentScope,
-        queryErrors: nextErrors,
-        trackedTaskIds: [...currentScope.trackedTaskIds, taskId],
-      };
-    });
+    setState((current) => addTrackedTask(current, scopeKey, taskId));
 
     void fetchTask(taskId);
     startTaskInterval(taskId);
@@ -205,7 +167,9 @@ export function useTaskPolling({
     };
   }, [intervalMs, scopeKey]);
 
-  const currentState = state.scopeKey === scopeKey ? state : emptyPollingState(scopeKey);
+  const currentState = state.scopeKey === scopeKey
+    ? state
+    : emptyTaskPollingState(scopeKey);
 
   return {
     tasks: currentState.tasks,

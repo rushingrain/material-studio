@@ -54,6 +54,7 @@ material-studio/
 ├── PROJECT.md
 ├── README.md
 ├── docker-compose.yml
+├── .env.example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
@@ -73,12 +74,11 @@ material-studio/
 │   ├── eslint.config.mjs
 │   ├── Dockerfile
 │   ├── public/
-│   └── src/
-│       ├── app/                     # App Router 页面：模板列表、详情、历史
-│       ├── components/              # 卡片、分类筛选、上传位、任务状态展示
-│       ├── hooks/                   # 多任务轮询等自定义 hook
-│       ├── lib/                     # API 封装、类型定义
-│       └── styles/
+│   ├── app/                         # App Router 页面：模板列表、登录、详情、历史
+│   ├── components/                  # 卡片、上传位、任务状态和认证组件
+│   ├── hooks/                       # 多任务轮询、上传请求管理
+│   ├── lib/                         # API、类型和纯状态函数
+│   └── tests/                       # 前端异步状态测试
 │
 ├── mysql/
 │   └── init/                        # Compose 初始化 SQL（schema + 种子数据）

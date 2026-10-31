@@ -29,17 +29,59 @@ CREATE TABLE IF NOT EXISTS user_session (
     CONSTRAINT fk_user_session_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-ALTER TABLE upload_asset
-    ADD COLUMN user_id BIGINT UNSIGNED NULL AFTER id;
+DROP PROCEDURE IF EXISTS migrate_upload_asset_owner;
 
-UPDATE upload_asset
-SET user_id = 1
-WHERE user_id IS NULL;
+DELIMITER $$
 
-ALTER TABLE upload_asset
-    MODIFY user_id BIGINT UNSIGNED NOT NULL,
-    ADD KEY idx_upload_asset_user_created (user_id, created_at DESC),
-    ADD CONSTRAINT fk_upload_asset_user FOREIGN KEY (user_id) REFERENCES app_user (id);
+CREATE PROCEDURE migrate_upload_asset_owner()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = 'upload_asset'
+          AND column_name = 'user_id'
+    ) THEN
+        ALTER TABLE upload_asset
+            ADD COLUMN user_id BIGINT UNSIGNED NULL AFTER id;
+    END IF;
+
+    UPDATE upload_asset
+    SET user_id = 1
+    WHERE user_id IS NULL;
+
+    ALTER TABLE upload_asset
+        MODIFY user_id BIGINT UNSIGNED NOT NULL;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = 'upload_asset'
+          AND index_name = 'idx_upload_asset_user_created'
+    ) THEN
+        ALTER TABLE upload_asset
+            ADD KEY idx_upload_asset_user_created (user_id, created_at DESC);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_schema = DATABASE()
+          AND table_name = 'upload_asset'
+          AND constraint_name = 'fk_upload_asset_user'
+          AND constraint_type = 'FOREIGN KEY'
+    ) THEN
+        ALTER TABLE upload_asset
+            ADD CONSTRAINT fk_upload_asset_user
+            FOREIGN KEY (user_id) REFERENCES app_user (id);
+    END IF;
+END$$
+
+DELIMITER ;
+
+CALL migrate_upload_asset_owner();
+DROP PROCEDURE migrate_upload_asset_owner;
 
 INSERT INTO user_credential
     (user_id, username, password_hash, password_salt, password_iterations)

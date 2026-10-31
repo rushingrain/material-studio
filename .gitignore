@@ -1,4 +1,6 @@
 .idea/
+.env
 upload/
 uploads/
 out/
+*.log

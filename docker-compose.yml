@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: material_studio
+      MYSQL_USER: ${MYSQL_USER:-material_studio}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-material_studio_dev}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-material_studio_root_dev}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/material_studio?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true
+      DB_USERNAME: ${MYSQL_USER:-material_studio}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-material_studio_dev}
+      SPRING_PROFILES_ACTIVE: dev
+      APP_UPLOAD_DIR: /uploads
+      APP_CORS_ALLOWED_ORIGIN: ${APP_CORS_ALLOWED_ORIGIN:-http://localhost:3000}
+      APP_AUTH_COOKIE_SECURE: ${APP_AUTH_COOKIE_SECURE:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - upload-data:/uploads
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql-data:
+  upload-data:

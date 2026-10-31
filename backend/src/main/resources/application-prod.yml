@@ -1,5 +1,5 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/material_studio?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:sql12138}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
