@@ -1,69 +1,44 @@
-import Image from "next/image";
+import { TemplateGallery } from "@/components/template-gallery";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="page-shell">
+      <section className="hero-section">
+        <div className="hero-copy">
+          <p className="eyebrow"><span className="eyebrow-dot" /> 灵感，从一张照片开始</p>
+          <h1>让每一份日常<br /><span>都值得被珍藏。</span></h1>
+          <p className="hero-description">挑选喜欢的创作灵感，上传照片，把平凡瞬间变成属于你的作品。</p>
+          <a className="hero-link" href="#templates">探索模板 <span aria-hidden="true">↓</span></a>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="hero-art" aria-label="几何风格的创作灵感插画" role="img">
+          <div className="art-sun" />
+          <div className="art-frame art-frame-back"><span /></div>
+          <div className="art-frame art-frame-front">
+            <div className="art-mountain art-mountain-back" />
+            <div className="art-mountain art-mountain-front" />
+            <div className="art-water" />
+          </div>
+          <div className="art-sparkle sparkle-one">✳</div>
+          <div className="art-sparkle sparkle-two">✳</div>
+          <div className="art-caption">A LITTLE MOMENT<br /><span>NO. 04 — AUTUMN LIGHT</span></div>
         </div>
-      </main>
-    </div>
+        <div className="hero-index"><span>01</span> / 04 <i /></div>
+      </section>
+
+      <section className="templates-section" id="templates">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">从灵感到作品</p>
+            <h2>选一个，开始你的故事。</h2>
+          </div>
+          <p className="section-aside">每一份灵感，都为真实生活而来。</p>
+        </div>
+        <TemplateGallery />
+      </section>
+      <footer className="site-footer">
+        <span>拾光 STUDIO</span>
+        <span>为每一个值得记住的瞬间。</span>
+      </footer>
+    </main>
   );
 }

@@ -44,6 +44,14 @@ export type TaskAsset = {
   sortOrder: number;
 };
 
+export type UploadedAsset = {
+  id: string;
+  url: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 export type Task = {
   id: string;
   userId: number;
@@ -62,4 +70,4 @@ export type ApiState<T> =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "success"; data: T }
-  | { status: "error"; error: Error & { code: number; httpStatus: number } };
+  | { status: "error"; error: Error };

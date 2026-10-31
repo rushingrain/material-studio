@@ -1,4 +1,4 @@
-import type { ApiResponse } from "./types";
+import type { ApiResponse, UploadedAsset } from "./types";
 
 export class ApiError extends Error {
   readonly code: number;
@@ -13,6 +13,22 @@ export class ApiError extends Error {
 }
 
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
+
+export function assetUrl(path: string): string {
+  if (/^https?:\/\//.test(path)) return path;
+  return `${apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+export async function uploadAsset(templateId: number, file: File, signal?: AbortSignal): Promise<UploadedAsset> {
+  const formData = new FormData();
+  formData.append("templateId", String(templateId));
+  formData.append("file", file);
+  return apiRequest<UploadedAsset>("/uploads", { method: "POST", body: formData, signal });
+}
+
+export async function deleteUploadedAsset(id: string): Promise<void> {
+  await apiRequest<void>(`/uploads/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;

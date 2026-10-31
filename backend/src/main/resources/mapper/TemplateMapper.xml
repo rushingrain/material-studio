@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.learn.lfy.mtr.mapper.TemplateMapper">
+    <resultMap id="templateResultMap" type="cn.learn.lfy.mtr.domain.model.Template">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="code" javaType="java.lang.String"/>
+            <arg column="name" javaType="java.lang.String"/>
+            <arg column="category" javaType="java.lang.String"/>
+            <arg column="description" javaType="java.lang.String"/>
+            <arg column="cover_url" javaType="java.lang.String"/>
+            <arg column="example_image_url" javaType="java.lang.String"/>
+            <arg column="required_image_count" javaType="int"/>
+            <arg column="allowed_mime_types" javaType="java.util.List"
+                 typeHandler="cn.learn.lfy.mtr.mapper.typehandler.StringListJsonTypeHandler"/>
+            <arg column="max_image_size_bytes" javaType="long"/>
+            <arg column="sort_order" javaType="int"/>
+            <arg column="active" javaType="boolean"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+            <arg column="updated_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="templateColumns">
+        id, code, name, category, description, cover_url, example_image_url,
+        required_image_count, allowed_mime_types, max_image_size_bytes,
+        sort_order, active, created_at, updated_at
+    </sql>
+
+    <select id="findActiveTemplates" resultMap="templateResultMap">
+        SELECT <include refid="templateColumns"/>
+        FROM template
+        WHERE active = TRUE
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findActiveById" resultMap="templateResultMap">
+        SELECT <include refid="templateColumns"/>
+        FROM template
+        WHERE id = #{id} AND active = TRUE
+        LIMIT 1
+    </select>
+</mapper>

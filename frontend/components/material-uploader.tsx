@@ -1,0 +1,210 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import { ApiError, assetUrl } from "@/lib/api";
+import { formatAllowedTypes, formatFileSize, useMaterialUploads } from "@/hooks/useMaterialUploads";
+import type { Template } from "@/lib/types";
+
+type SubmitMessage = {
+  tone: "error" | "info";
+  text: string;
+};
+
+type MaterialUploaderProps = {
+  template: Template;
+  onSubmit?: (assetIds: string[]) => Promise<void>;
+};
+
+export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) {
+  const { slots, readyCount, uploadingCount, allReady, selectFile, removeFile, validateSelection } =
+    useMaterialUploads(template);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<SubmitMessage | null>(null);
+  const submitDisabled = !allReady || isSubmitting || isSubmitted;
+
+  const handleSubmit = async () => {
+    if (submitDisabled) return;
+    const validationError = validateSelection();
+    if (validationError) {
+      setSubmitMessage({ tone: "error", text: validationError });
+      return;
+    }
+
+    const assetIds = slots.flatMap((slot) => slot.asset ? [slot.asset.id] : []);
+    if (!onSubmit) {
+      setSubmitMessage({ tone: "info", text: "素材已经准备完成，任务提交将在下一步接入。" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+    try {
+      await onSubmit(assetIds);
+      setIsSubmitted(true);
+      setSubmitMessage({ tone: "info", text: "任务已提交，正在等待处理。" });
+    } catch (cause) {
+      const message = cause instanceof ApiError
+        ? cause.message
+        : cause instanceof Error
+          ? cause.message
+          : "提交失败，请稍后重试";
+      setSubmitMessage({ tone: "error", text: message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="requirements-panel" aria-labelledby="requirements-title">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">开始前准备</p>
+          <h2 id="requirements-title">素材要求</h2>
+        </div>
+        <span className="image-count">{template.requiredImageCount}<small> 张</small></span>
+      </div>
+
+      <div className="upload-slots" aria-label={`需要上传 ${template.requiredImageCount} 张图片`}>
+        {slots.map((slot, index) => {
+          const inputId = `material-upload-${template.id}-${index}`;
+          const previewUrl = slot.localPreviewUrl ?? (slot.asset ? assetUrl(slot.asset.url) : null);
+          const slotNumber = String(index + 1).padStart(2, "0");
+          return (
+            <div
+              aria-busy={slot.uploading}
+              className={`upload-slot${previewUrl ? " is-filled" : ""}${slot.uploading ? " is-uploading" : ""}${slot.error ? " is-error" : ""}`}
+              key={index}
+            >
+              <span className="upload-slot-number" aria-hidden="true">{slotNumber}</span>
+              <input
+                accept={template.allowedMimeTypes.join(",")}
+                aria-label={`选择第 ${index + 1} 张图片`}
+                className="upload-slot-input"
+                id={inputId}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  event.currentTarget.value = "";
+                  setSubmitMessage(null);
+                  setIsSubmitted(false);
+                  if (file) void selectFile(index, file);
+                }}
+                type="file"
+              />
+
+              {previewUrl && (
+                <Image
+                  alt={`第 ${index + 1} 张素材预览`}
+                  className="upload-slot-preview"
+                  fill
+                  sizes="120px"
+                  src={previewUrl}
+                  unoptimized
+                />
+              )}
+
+              {!previewUrl && (
+                <label className="upload-slot-trigger" htmlFor={inputId}>
+                  <span className="upload-slot-plus" aria-hidden="true">＋</span>
+                  <span>{slot.error ? "重新选择" : "添加图片"}</span>
+                </label>
+              )}
+
+              {slot.uploading && (
+                <div className="upload-slot-overlay" role="status">
+                  <span className="upload-spinner" aria-hidden="true" />
+                  <span>上传中</span>
+                </div>
+              )}
+
+              {previewUrl && !slot.uploading && (
+                <div className="upload-slot-actions">
+                  <label
+                    className="upload-slot-action"
+                    htmlFor={inputId}
+                    title={`替换第 ${index + 1} 张图片`}
+                  >
+                    <span aria-hidden="true">↻</span><span>替换</span>
+                  </label>
+                  <button
+                    aria-label={`移除第 ${index + 1} 张图片`}
+                    className="upload-slot-action upload-slot-remove"
+                    onClick={() => {
+                      setSubmitMessage(null);
+                      setIsSubmitted(false);
+                      removeFile(index);
+                    }}
+                    title={`移除第 ${index + 1} 张图片`}
+                    type="button"
+                  >
+                    <span aria-hidden="true">×</span><span>移除</span>
+                  </button>
+                </div>
+              )}
+
+              {slot.uploading && (
+                <button
+                  aria-label={`取消上传并移除第 ${index + 1} 张图片`}
+                  className="upload-slot-cancel"
+                  onClick={() => {
+                    setSubmitMessage(null);
+                    setIsSubmitted(false);
+                    removeFile(index);
+                  }}
+                  title="取消上传并移除"
+                  type="button"
+                >
+                  ×
+                </button>
+              )}
+
+              {slot.error && (
+                <p className="upload-slot-error" role="alert">{slot.error}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className={`upload-summary${allReady ? " is-ready" : ""}`} aria-live="polite">
+        {uploadingCount > 0
+          ? `正在上传 ${uploadingCount} 张图片…`
+          : allReady
+            ? `${template.requiredImageCount} 张素材已就绪`
+            : `已准备 ${readyCount} / ${template.requiredImageCount} 张`}
+      </p>
+
+      <dl className="requirement-list">
+        <div>
+          <dt>支持格式</dt>
+          <dd>{formatAllowedTypes(template)}</dd>
+        </div>
+        <div>
+          <dt>单张大小</dt>
+          <dd>不超过 {formatFileSize(template.maxImageSizeBytes)}</dd>
+        </div>
+      </dl>
+
+      <div className="detail-cta-row">
+        <button
+          className="button button-dark detail-cta"
+          disabled={submitDisabled}
+          onClick={() => void handleSubmit()}
+          type="button"
+        >
+          <span>{isSubmitting ? "正在提交…" : isSubmitted ? "已提交" : allReady ? "素材已就绪，开始创作" : "上传素材，开始创作"}</span>
+          <span aria-hidden="true">↗</span>
+        </button>
+        {submitMessage && (
+          <p
+            className={`upload-submit-message is-${submitMessage.tone}`}
+            role={submitMessage.tone === "error" ? "alert" : "status"}
+          >
+            {submitMessage.text}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}

@@ -7,6 +7,7 @@ public enum ApiErrorCode {
     TEMPLATE_NOT_FOUND(20001, "模板不存在"),
     TASK_NOT_FOUND(20002, "任务不存在"),
     USER_NOT_FOUND(20003, "用户不存在"),
+    ASSET_NOT_FOUND(20004, "素材不存在"),
     FILE_TOO_LARGE(30001, "文件超过大小限制"),
     FILE_TYPE_NOT_ALLOWED(30002, "文件类型不支持"),
     BUSINESS_CONFLICT(40001, "请求与当前资源状态冲突"),
