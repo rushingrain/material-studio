@@ -30,11 +30,16 @@ export async function deleteUploadedAsset(id: string): Promise<void> {
   await apiRequest<void>(`/uploads/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-export async function createTask(templateId: number, assetIds: string[]): Promise<CreatedTask> {
+export async function createTask(
+  templateId: number,
+  assetIds: string[],
+  signal?: AbortSignal,
+): Promise<CreatedTask> {
   return apiRequest<CreatedTask>("/tasks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ templateId, assetIds }),
+    signal,
   });
 }
 

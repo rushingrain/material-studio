@@ -1,34 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { MaterialUploader } from "@/components/material-uploader";
 import { TaskStatusPanel } from "@/components/task-status-panel";
 import { useTaskPolling } from "@/hooks/useTaskPolling";
 import { createTask } from "@/lib/api";
 import type { Template } from "@/lib/types";
 
+// 当前演示身份固定；接入用户切换后，将用户维度传入轮询作用域。
+const TASK_SCOPE_KEY = "demo-user";
+
 export function TemplateWorkflow({ template }: { template: Template }) {
-  const { tasks, queryErrors, trackTask } = useTaskPolling();
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const { tasks, queryErrors, trackedTaskIds, trackTask, retryTask } = useTaskPolling({
+    scopeKey: TASK_SCOPE_KEY,
+  });
+  const submitController = useRef<AbortController | null>(null);
+  const latestTaskId = trackedTaskIds.at(-1) ?? null;
+  const latestTask = latestTaskId ? tasks[latestTaskId] ?? null : null;
+  const latestTaskQueryError = latestTaskId ? queryErrors[latestTaskId] ?? null : null;
+  const latestTaskIsActive = latestTaskId !== null
+    && (!latestTask || latestTask.status === "PENDING" || latestTask.status === "PROCESSING");
+
+  useEffect(() => () => {
+    submitController.current?.abort();
+  }, []);
 
   const handleSubmit = async (assetIds: string[]) => {
-    const task = await createTask(template.id, assetIds);
-    setActiveTaskId(task.id);
-    trackTask(task.id);
-  };
+    submitController.current?.abort();
+    const controller = new AbortController();
+    submitController.current = controller;
 
-  const activeTask = activeTaskId ? tasks[activeTaskId] ?? null : null;
-  const queryError = activeTaskId ? queryErrors[activeTaskId] ?? null : null;
+    try {
+      const task = await createTask(template.id, assetIds, controller.signal);
+      if (controller.signal.aborted) return;
+      trackTask(task.id);
+    } finally {
+      if (submitController.current === controller) {
+        submitController.current = null;
+      }
+    }
+  };
 
   return (
     <>
-      <MaterialUploader onSubmit={handleSubmit} template={template} />
-      {activeTaskId && (
-        <TaskStatusPanel
-          queryError={queryError}
-          task={activeTask}
-          taskId={activeTaskId}
-        />
+      <MaterialUploader
+        latestTaskActive={latestTaskIsActive}
+        latestTaskQueryError={latestTaskQueryError !== null}
+        latestTaskStatus={latestTask?.status ?? null}
+        onSubmit={handleSubmit}
+        template={template}
+      />
+      {trackedTaskIds.length > 0 && (
+        <div className="task-status-list" aria-label="已提交任务">
+          {trackedTaskIds.map((taskId) => (
+            <TaskStatusPanel
+              key={taskId}
+              onRetry={() => retryTask(taskId)}
+              queryError={queryErrors[taskId] ?? null}
+              task={tasks[taskId] ?? null}
+              taskId={taskId}
+            />
+          ))}
+        </div>
       )}
     </>
   );

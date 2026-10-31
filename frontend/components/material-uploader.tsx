@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { ApiError, assetUrl } from "@/lib/api";
 import { formatAllowedTypes, formatFileSize, useMaterialUploads } from "@/hooks/useMaterialUploads";
-import type { Template } from "@/lib/types";
+import type { TaskStatus, Template } from "@/lib/types";
 
 type SubmitMessage = {
   tone: "error" | "info";
@@ -14,15 +14,30 @@ type SubmitMessage = {
 type MaterialUploaderProps = {
   template: Template;
   onSubmit?: (assetIds: string[]) => Promise<void>;
+  latestTaskStatus: TaskStatus | null;
+  latestTaskActive: boolean;
+  latestTaskQueryError: boolean;
 };
 
-export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) {
+function taskStatusLabel(status: TaskStatus | null, hasQueryError: boolean): string {
+  if (status === "PROCESSING") return "任务处理中";
+  if (status === "PENDING") return "任务等待处理";
+  if (hasQueryError) return "任务状态等待恢复";
+  return "任务等待处理";
+}
+
+export function MaterialUploader({
+  template,
+  onSubmit,
+  latestTaskStatus,
+  latestTaskActive,
+  latestTaskQueryError,
+}: MaterialUploaderProps) {
   const { slots, readyCount, uploadingCount, allReady, selectFile, removeFile, validateSelection } =
     useMaterialUploads(template);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<SubmitMessage | null>(null);
-  const submitDisabled = !allReady || isSubmitting || isSubmitted;
+  const submitDisabled = !allReady || isSubmitting || latestTaskActive;
 
   const handleSubmit = async () => {
     if (submitDisabled) return;
@@ -42,8 +57,7 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
     setSubmitMessage(null);
     try {
       await onSubmit(assetIds);
-      setIsSubmitted(true);
-      setSubmitMessage({ tone: "info", text: "任务已提交，正在等待处理。" });
+      setSubmitMessage({ tone: "info", text: "任务已受理，处理进度会在下方实时更新。" });
     } catch (cause) {
       const message = cause instanceof ApiError
         ? cause.message
@@ -82,13 +96,12 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                 accept={template.allowedMimeTypes.join(",")}
                 aria-label={`选择第 ${index + 1} 张图片`}
                 className="upload-slot-input"
-                disabled={isSubmitted || isSubmitting}
+                disabled={latestTaskActive || isSubmitting}
                 id={inputId}
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
                   event.currentTarget.value = "";
                   setSubmitMessage(null);
-                  setIsSubmitted(false);
                   if (file) void selectFile(index, file);
                 }}
                 type="file"
@@ -119,7 +132,7 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                 </div>
               )}
 
-              {previewUrl && !slot.uploading && !isSubmitted && !isSubmitting && (
+              {previewUrl && !slot.uploading && !latestTaskActive && !isSubmitting && (
                 <div className="upload-slot-actions">
                   <label
                     className="upload-slot-action"
@@ -133,7 +146,6 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                     className="upload-slot-action upload-slot-remove"
                     onClick={() => {
                       setSubmitMessage(null);
-                      setIsSubmitted(false);
                       removeFile(index);
                     }}
                     title={`移除第 ${index + 1} 张图片`}
@@ -150,7 +162,6 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
                   className="upload-slot-cancel"
                   onClick={() => {
                     setSubmitMessage(null);
-                    setIsSubmitted(false);
                     removeFile(index);
                   }}
                   title="取消上传并移除"
@@ -189,12 +200,20 @@ export function MaterialUploader({ template, onSubmit }: MaterialUploaderProps) 
 
       <div className="detail-cta-row">
         <button
-          className="button button-dark detail-cta"
+          className={`button button-dark detail-cta${latestTaskActive ? " is-task-active" : ""}`}
           disabled={submitDisabled}
           onClick={() => void handleSubmit()}
           type="button"
         >
-          <span>{isSubmitting ? "正在提交…" : isSubmitted ? "已提交" : allReady ? "素材已就绪，开始创作" : "上传素材，开始创作"}</span>
+          <span>
+            {isSubmitting
+              ? "正在提交…"
+              : latestTaskActive
+                ? taskStatusLabel(latestTaskStatus, latestTaskQueryError)
+                : allReady
+                  ? "素材已就绪，开始创作"
+                  : "上传素材，开始创作"}
+          </span>
           <span aria-hidden="true">↗</span>
         </button>
         {submitMessage && (

@@ -158,10 +158,12 @@ button { color: inherit; }
 .requirement-list dd { color: #45463b; margin: 0; }
 .detail-cta-row { margin-top: 20px; }
 .detail-cta { justify-content: space-between; min-height: 50px; padding: 0 18px; width: 100%; }
+.detail-cta.is-task-active:disabled { background: #ebe6d3; color: #74652f; cursor: default; opacity: 1; }
 .detail-cta-row > p { color: #aaa99e; font-size: 9px; margin: 9px 0 0; text-align: center; }
 .upload-submit-message.is-error { color: #9d513e; }
 .upload-submit-message.is-info { color: #77776c; }
-.task-status-panel { background: #f8f7f2; border: 1px solid #deddd4; margin-top: 18px; padding: 19px 20px 17px; }
+.task-status-list { display: grid; gap: 10px; margin-top: 18px; }
+.task-status-panel { background: #f8f7f2; border: 1px solid #deddd4; padding: 19px 20px 17px; }
 .task-status-heading { align-items: start; display: flex; gap: 14px; justify-content: space-between; }
 .task-status-heading .eyebrow { font-size: 9px; margin-bottom: 6px; }
 .task-status-heading h2 { font-size: 16px; font-weight: 500; margin: 0; }
@@ -182,7 +184,10 @@ button { color: inherit; }
 .task-result-preview { background: #eeece4; margin-top: 13px; overflow: hidden; }
 .task-result-preview img { display: block; height: auto; width: 100%; }
 .task-result-link { border-bottom: 1px solid #a8a79c; color: var(--olive); display: inline-flex; font-size: 9px; margin-top: 9px; padding-bottom: 2px; }
-.task-query-error { background: #fbf4f0; color: #9d513e; font-size: 9px; line-height: 1.7; margin: 13px 0 0; padding: 8px 9px; }
+.task-query-error { align-items: center; background: #fbf4f0; color: #9d513e; display: flex; font-size: 9px; gap: 12px; justify-content: space-between; line-height: 1.7; margin: 13px 0 0; padding: 8px 9px; }
+.task-query-error p { margin: 0; }
+.task-query-error button { background: #f3e2dc; border: 1px solid #dfb19f; color: #8e4837; cursor: pointer; flex: 0 0 auto; font-size: 9px; padding: 5px 8px; }
+.task-query-error button:hover { background: #ecd1c7; }
 .task-id { color: #aaa99e; display: block; font-family: var(--font-mono); font-size: 8px; letter-spacing: .02em; line-height: 1.5; margin-top: 12px; overflow-wrap: anywhere; }
 .task-status-loading { color: #8c8b80; font-size: 10px; margin: 17px 0 0; }
 .detail-feedback { margin: 30px auto 70px; max-width: 680px; min-height: 370px; }

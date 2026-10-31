@@ -53,10 +53,12 @@ export function TaskStatusPanel({
   taskId,
   task,
   queryError,
+  onRetry,
 }: {
   taskId: string;
   task: Task | null;
   queryError: string | null;
+  onRetry: () => void;
 }) {
   const currentStage = task?.status === "FAILED" ? task.failureStage : task?.stage;
   const badgeText = task ? STATUS_LABELS[task.status] : queryError ? "查询异常" : "读取中";
@@ -105,9 +107,14 @@ export function TaskStatusPanel({
             {currentStage ? ` · ${STAGE_LABELS[currentStage]}` : ""}
           </p>
           {task.status === "FAILED" && (
-            <p>
-              失败原因：<strong>{task.failureReason ?? "任务处理失败，请稍后重试"}</strong>
-            </p>
+            <>
+              <p>
+                失败阶段：<strong>{task.failureStage ? STAGE_LABELS[task.failureStage] : "处理中"}</strong>
+              </p>
+              <p>
+                失败原因：<strong>{task.failureReason ?? "任务处理失败，请稍后重试"}</strong>
+              </p>
+            </>
           )}
           {task.status === "SUCCEEDED" && task.resultUrl && (
             <>
@@ -130,13 +137,17 @@ export function TaskStatusPanel({
               </a>
             </>
           )}
+          {task.status === "SUCCEEDED" && !task.resultUrl && (
+            <p>制作已经完成，但结果地址暂未返回。</p>
+          )}
         </div>
       )}
 
       {queryError && (
-        <p className="task-query-error" role="alert">
-          状态查询失败：{queryError}。任务状态未因此改变，正在自动重试。
-        </p>
+        <div className="task-query-error" role="alert">
+          <p>状态查询失败：{queryError}。任务状态未因此改变，正在自动重试。</p>
+          <button onClick={onRetry} type="button">立即重试</button>
+        </div>
       )}
 
       <span className="task-id">任务 ID：{taskId}</span>
